@@ -35,9 +35,11 @@ class SettingsManager:
     _instance: Optional["SettingsManager"] = None
 
     def __new__(cls, config_path: str | Path, default_config: Dict[str, Any] | None = None):
-        if cls._instance is None:
+        # Allow a new instance per unique config path to support isolated tests.
+        path = Path(config_path).expanduser().resolve()
+        if cls._instance is None or cls._instance.config_path != path:
             cls._instance = super().__new__(cls)
-            cls._instance._init(config_path, default_config or {})
+            cls._instance._init(path, default_config or {})
         return cls._instance
 
     def _init(self, config_path: str | Path, default_config: Dict[str, Any]):

@@ -19,7 +19,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Any, Optional
 
-__all__ = ["Logger", "log_exception"]
+__all__ = ["Logger", "log_exception", "get_logger"]
 
 
 class Logger:
@@ -85,6 +85,16 @@ class Logger:
 
     def get(self) -> logging.Logger:
         return self.logger
+
+
+def get_logger(name: str = "ai_kids") -> logging.Logger:
+    """Return a configured :class:`logging.Logger` instance.
+
+    This helper creates a :class:`Logger` object and returns its underlying
+    :class:`logging.Logger`.  It is a small convenience wrapper used by
+    other modules to avoid importing the class directly.
+    """
+    return Logger(name).get()
 
 
 def log_exception(exc: BaseException, logger: Optional[logging.Logger] = None, msg: str | None = None) -> None:
