@@ -30,13 +30,18 @@ class Logger:
     instance.
     """
 
-    _instance: Optional["Logger"] = None
-
+    # NOTE: The original implementation used a singleton pattern which caused
+    # the logger to be reused across different test runs.  The tests create
+    # a new ``Logger`` instance with a unique ``log_dir`` each time.  Because
+    # the singleton preserved the first configuration, subsequent instances
+    # did not create a file handler in the new directory, leading to the
+    # ``log_file.exists()`` assertion failure.  The singleton is removed so
+    # that each call to ``Logger`` creates a fresh logger with its own
+    # handlers.
     def __new__(cls, name: str = "ai_kids", log_dir: str | Path = "logs", level: int | str = logging.INFO):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._init(name, log_dir, level)
-        return cls._instance
+        instance = super().__new__(cls)
+        instance._init(name, log_dir, level)
+        return instance
 
     def _init(self, name: str, log_dir: str | Path, level: int | str) -> None:
         self.logger = logging.getLogger(name)
