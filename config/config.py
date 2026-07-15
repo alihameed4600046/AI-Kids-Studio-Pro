@@ -19,6 +19,9 @@ class Config:
             "fonts": "assets/fonts",
             "icons": "assets/icons",
         },
+        "database": {
+            "path": "db.sqlite3",
+        },
     }
 
     def __init__(self, path: str | Path | None = None) -> None:
