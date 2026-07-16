@@ -4,3 +4,9 @@ __pycache__/
 logs/
 .vscode/
 .env
+config/settings.json
+config/theme.json
+db.sqlite3
+*.sqlite3
+*.db
+*.log
