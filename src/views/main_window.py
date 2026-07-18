@@ -16,6 +16,7 @@ from src.theme.theme_manager import ThemeManager
 from src.theme.theme_models import ThemeSettings
 from src.logging.logger import get_logger
 from src.config import Config
+from src.views.navigation import NavigationManager, HomePage
 
 
 __all__ = ["MainWindow"]
@@ -92,6 +93,12 @@ class MainWindow(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._logger.info("Main window initialized: %s (%dx%d)", app_title, window_settings['width'], window_settings['height'])
+
+        # Initialize NavigationManager and register HomePage
+        self._navigation_manager = NavigationManager(self.content_container, self._logger)
+        self._navigation_manager.register_page("home", HomePage)
+        self._navigation_manager.navigate_to("home")
+        self._logger.info("NavigationManager initialized with HomePage")
 
     def _center_window(self) -> None:
         """Center the window on the screen."""
