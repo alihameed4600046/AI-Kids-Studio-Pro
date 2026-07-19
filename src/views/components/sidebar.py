@@ -5,8 +5,9 @@ This module provides the Sidebar component for the main application window.
 
 from __future__ import annotations
 
-import customtkinter as ctk
 from typing import Optional
+
+import customtkinter as ctk
 
 from src.logging.logger import get_logger
 
@@ -17,11 +18,7 @@ __all__ = ["Sidebar"]
 class Sidebar(ctk.CTkFrame):
     """Sidebar component for the main application window.
 
-    A fixed-width sidebar frame serving as a placeholder for future navigation.
-    Fixed width, spans full height of content area.
-
-    Attributes:
-        DEFAULT_WIDTH: Default fixed width of the sidebar in pixels.
+    A fixed-width sidebar frame that renders a vertical button list.
     """
 
     DEFAULT_WIDTH = 260
@@ -54,41 +51,43 @@ class Sidebar(ctk.CTkFrame):
         self._logger = logger or get_logger("sidebar")
         self._width = sidebar_width
 
-        # Prevent frame from shrinking/expanding
         self.grid_propagate(False)
-        self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Placeholder label for empty sidebar
-        self._placeholder_label = ctk.CTkLabel(
-            self,
-            text="Sidebar\n(Placeholder)",
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
-        )
-        self._placeholder_label.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        self.nav_buttons: list[ctk.CTkButton] = []
+
+        nav_items = [
+            "Home",
+            "Projects",
+            "Prompts",
+            "Images",
+            "Voices",
+            "Videos",
+            "Settings",
+        ]
+
+        for index, item in enumerate(nav_items):
+            button = ctk.CTkButton(
+                self,
+                text=item,
+                height=40,
+                corner_radius=8,
+                fg_color="transparent",
+                hover_color=("gray85", "gray20"),
+                border_width=0,
+                anchor="w",
+            )
+            button.grid(
+                row=index,
+                column=0,
+                padx=18,
+                pady=(0 if index == 0 else 6),
+                sticky="ew",
+            )
+            self.nav_buttons.append(button)
 
         self._logger.debug("Sidebar initialized with width: %d", sidebar_width)
 
     @property
     def width(self) -> int:
-        """Get the sidebar width.
-
-        Returns:
-            The fixed width of the sidebar in pixels.
-        """
         return self._width
-
-    def clear_placeholder(self) -> None:
-        """Remove the placeholder label to allow adding custom content."""
-        self._placeholder_label.grid_remove()
-        self._logger.debug("Sidebar placeholder cleared")
-
-    def set_placeholder_text(self, text: str) -> None:
-        """Update the placeholder text.
-
-        Args:
-            text: New placeholder text to display.
-        """
-        self._placeholder_label.configure(text=text)
-        self._logger.debug("Sidebar placeholder text updated: %s", text)
