@@ -2,7 +2,7 @@
 
 This module provides the main application window using CustomTkinter.
 It creates the root window with proper configuration, theme integration,
-and empty layout containers for future UI modules.
+and layout using reusable UI components.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from src.theme.theme_models import ThemeSettings
 from src.logging.logger import get_logger
 from src.config import Config
 from src.views.navigation import NavigationManager, HomePage
+from src.views.components import Header, Sidebar, StatusBar
 
 
 __all__ = ["MainWindow"]
@@ -156,42 +157,24 @@ class MainWindow(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)  # Content - expands
 
     def _create_containers(self) -> None:
-        """Create empty layout containers for future UI modules.
+        """Create layout containers using reusable UI components.
 
-        Creates four empty container frames:
-        - Header Frame (row 0, spans both columns)
-        - Sidebar Container (row 1, column 0)
+        Creates four container components:
+        - Header (row 0, spans both columns)
+        - Sidebar (row 1, column 0)
         - Content Container (row 1, column 1)
-        - Status Bar Container (row 2, spans both columns)
-
-        All containers are empty placeholders for future phases.
+        - Status Bar (row 2, spans both columns)
         """
         theme_settings = self._theme_manager.get_settings()
         padding = theme_settings.padding
-        radius = theme_settings.widget_radius
 
-        # Header Frame - spans full width at top
-        self.header_frame = ctk.CTkFrame(
-            self,
-            height=60,
-            corner_radius=0,
-            fg_color="transparent",
-        )
-        self.header_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
-        self.header_frame.grid_propagate(False)  # Maintain fixed height
-        self.header_frame.grid_columnconfigure(0, weight=1)
+        # Header - spans full width at top
+        self.header = Header(self, height=60)
+        self.header.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
 
-        # Sidebar Container - left side, fixed width
-        self.sidebar_container = ctk.CTkFrame(
-            self,
-            width=260,
-            corner_radius=0,
-            fg_color="transparent",
-        )
-        self.sidebar_container.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
-        self.sidebar_container.grid_propagate(False)  # Maintain fixed width
-        self.sidebar_container.grid_rowconfigure(0, weight=1)
-        self.sidebar_container.grid_columnconfigure(0, weight=1)
+        # Sidebar - left side, fixed width
+        self.sidebar = Sidebar(self, width=260)
+        self.sidebar.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
 
         # Content Container - main area, expands
         self.content_container = ctk.CTkFrame(
@@ -203,16 +186,9 @@ class MainWindow(ctk.CTk):
         self.content_container.grid_rowconfigure(0, weight=1)
         self.content_container.grid_columnconfigure(0, weight=1)
 
-        # Status Bar Container - bottom, spans full width
-        self.status_bar_container = ctk.CTkFrame(
-            self,
-            height=30,
-            corner_radius=0,
-            fg_color="transparent",
-        )
-        self.status_bar_container.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
-        self.status_bar_container.grid_propagate(False)  # Maintain fixed height
-        self.status_bar_container.grid_columnconfigure(0, weight=1)
+        # Status Bar - bottom, spans full width
+        self.status_bar = StatusBar(self, height=30)
+        self.status_bar.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
 
         self._logger.debug("Layout containers created: header, sidebar, content, status_bar")
 
@@ -275,7 +251,7 @@ class MainWindow(ctk.CTk):
         Returns:
             The header frame for adding header UI components.
         """
-        return self.header_frame
+        return self.header
 
     def get_sidebar_container(self) -> ctk.CTkFrame:
         """Get the sidebar container.
@@ -283,7 +259,7 @@ class MainWindow(ctk.CTk):
         Returns:
             The sidebar container for adding navigation UI.
         """
-        return self.sidebar_container
+        return self.sidebar
 
     def get_content_container(self) -> ctk.CTkFrame:
         """Get the main content container.
@@ -299,7 +275,7 @@ class MainWindow(ctk.CTk):
         Returns:
             The status bar container for adding status UI.
         """
-        return self.status_bar_container
+        return self.status_bar
 
     def apply_theme(self) -> None:
         """Re-apply theme settings (call after theme changes)."""

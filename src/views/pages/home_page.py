@@ -7,10 +7,12 @@ for the application.
 from __future__ import annotations
 
 import customtkinter as ctk
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from src.views.pages.base_page import BasePage
-from src.navigation.navigation_manager import NavigationManager
+
+if TYPE_CHECKING:
+    from src.navigation.navigation_manager import NavigationManager
 
 
 __all__ = ["HomePage"]
@@ -25,7 +27,7 @@ class HomePage(BasePage):
     def __init__(
         self,
         master: ctk.CTkBaseClass,
-        navigation_manager: NavigationManager,
+        navigation_manager: "NavigationManager",
         **kwargs: Any,
     ) -> None:
         """Initialize the home page.
