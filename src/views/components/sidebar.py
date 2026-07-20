@@ -5,7 +5,7 @@ This module provides the Sidebar component for the main application window.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Callable
 
 import customtkinter as ctk
 
@@ -28,6 +28,7 @@ class Sidebar(ctk.CTkFrame):
         master: ctk.CTkFrame,
         width: Optional[int] = None,
         logger=None,
+        on_nav_click: Optional[Callable[[str], None]] = None,
         **kwargs,
     ) -> None:
         """Initialize the Sidebar component.
@@ -36,6 +37,8 @@ class Sidebar(ctk.CTkFrame):
             master: Parent widget (typically the main window).
             width: Optional fixed width in pixels. Defaults to DEFAULT_WIDTH.
             logger: Optional logger instance.
+            on_nav_click: Optional callback when a nav button is clicked.
+                Receives the nav item name as argument.
             **kwargs: Additional keyword arguments passed to CTkFrame.
         """
         sidebar_width = width or self.DEFAULT_WIDTH
@@ -50,6 +53,7 @@ class Sidebar(ctk.CTkFrame):
 
         self._logger = logger or get_logger("sidebar")
         self._width = sidebar_width
+        self._on_nav_click = on_nav_click
 
         self.grid_propagate(False)
         self.grid_columnconfigure(0, weight=1)
@@ -76,6 +80,7 @@ class Sidebar(ctk.CTkFrame):
                 hover_color=("gray85", "gray20"),
                 border_width=0,
                 anchor="w",
+                command=lambda name=item: self._on_button_click(name),
             )
             button.grid(
                 row=index,
@@ -87,6 +92,12 @@ class Sidebar(ctk.CTkFrame):
             self.nav_buttons.append(button)
 
         self._logger.debug("Sidebar initialized with width: %d", sidebar_width)
+
+    def _on_button_click(self, name: str) -> None:
+        """Handle nav button click and invoke callback if provided."""
+        if self._on_nav_click:
+            self._on_nav_click(name)
+        self._logger.debug("Nav button clicked: %s", name)
 
     @property
     def width(self) -> int:
