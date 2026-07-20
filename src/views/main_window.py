@@ -98,6 +98,10 @@ class MainWindow(ctk.CTk):
         # Initialize NavigationManager and register HomePage
         self._navigation_manager = NavigationManager(self.content_container, self._logger)
         self._navigation_manager.register_page("home", HomePage)
+        self._navigation_manager.register_page("projects", HomePage)
+        self._navigation_manager.register_page("prompts", HomePage)
+        self._navigation_manager.register_page("voices", HomePage)
+        self._navigation_manager.register_page("settings", HomePage)
         self._navigation_manager.navigate_to("home")
         self._logger.info("NavigationManager initialized with HomePage")
 
