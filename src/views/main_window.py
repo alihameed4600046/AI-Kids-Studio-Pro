@@ -173,7 +173,7 @@ class MainWindow(ctk.CTk):
         self.header.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
 
         # Sidebar - left side, fixed width
-        self.sidebar = Sidebar(self, width=260)
+        self.sidebar = Sidebar(self, width=260, on_nav_click=self._on_sidebar_navigation)
         self.sidebar.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
 
         # Content Container - main area, expands
@@ -240,6 +240,18 @@ class MainWindow(ctk.CTk):
         self._save_window_geometry()
         self._bootstrap.shutdown()
         self.destroy()
+
+    def _on_sidebar_navigation(self, page_name: str) -> None:
+        """Handle sidebar navigation callback.
+
+        Args:
+            page_name: Name of the page to navigate to.
+        """
+        try:
+            self._navigation_manager.navigate_to(page_name.lower())
+        except KeyError:
+            # Ignore gracefully if page is not registered
+            self._logger.debug("Page '%s' not registered, ignoring navigation", page_name)
 
     # ------------------------------------------------------------------
     # Public API for future UI modules
