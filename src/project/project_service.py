@@ -68,5 +68,28 @@ class ProjectService:
         """
         return self._repository.load(file_path)
 
+    def save_new_project(self, project: Project) -> Path:
+        """Save a new Project as project.json in its project directory.
+
+        Args:
+            project: Project instance to serialize.
+
+        Returns:
+            Full Path of the saved project.json file.
+
+        Raises:
+            FileExistsError: If a project.json file already exists at the target location.
+        """
+        project_dir = Path(project.project_path)
+        project_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = project_dir / "project.json"
+
+        if self._repository.exists(file_path):
+            raise FileExistsError(f"Project file already exists at {file_path}")
+
+        self._repository.save(project, file_path)
+        return file_path
+
 
 __all__ = ["ProjectService"]
