@@ -91,5 +91,25 @@ class ProjectService:
         self._repository.save(project, file_path)
         return file_path
 
+    def open_project(self, project_directory: str | Path) -> Project:
+        """Open an existing project from a project.json file.
+
+        Args:
+            project_directory: Path to the project directory containing project.json.
+
+        Returns:
+            Loaded Project instance.
+
+        Raises:
+            FileNotFoundError: If project.json does not exist in the given directory.
+        """
+        project_dir = Path(project_directory)
+        file_path = project_dir / "project.json"
+
+        if not self._repository.exists(file_path):
+            raise FileNotFoundError(f"Project file not found at {file_path}")
+
+        return self._repository.load(file_path)
+
 
 __all__ = ["ProjectService"]
