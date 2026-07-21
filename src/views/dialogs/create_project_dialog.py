@@ -6,6 +6,8 @@ through a modal dialog interface.
 """
 
 import customtkinter as ctk
+from src.project.project_service import ProjectService
+from src.models.project import Project
 
 
 class CreateProjectDialog(ctk.CTkToplevel):
@@ -25,6 +27,9 @@ class CreateProjectDialog(ctk.CTkToplevel):
             **kwargs: Additional keyword arguments passed to CTkToplevel.
         """
         super().__init__(master, **kwargs)
+        
+        self._service = ProjectService()
+        self.created_project: Project | None = None
         
         self._setup_window()
         self._create_widgets()
@@ -125,7 +130,8 @@ class CreateProjectDialog(ctk.CTkToplevel):
             height=35,
             font=ctk.CTkFont(size=13),
             fg_color="gray",
-            hover_color="gray50"
+            hover_color="gray50",
+            command=self._on_cancel
         )
         self.create_button = ctk.CTkButton(
             self.button_frame,
@@ -209,10 +215,27 @@ class CreateProjectDialog(ctk.CTkToplevel):
         return True
     
     def _on_create(self) -> None:
-        """Handle Create button click with validation."""
+        """Handle Create button click with validation and project creation."""
         if not self._validate_inputs():
             return
-        # Validation passed - no further action (placeholder for future logic)
+        
+        name = self.name_entry.get().strip()
+        description = self.description_entry.get().strip()
+        category = self.category_entry.get().strip()
+        project_location = self.location_entry.get().strip()
+        
+        self.created_project = self._service.create_project(
+            name=name,
+            description=description,
+            category=category,
+            project_path=project_location,
+        )
+        
+        self.destroy()
+    
+    def _on_cancel(self) -> None:
+        """Handle Cancel button click - simply close the dialog."""
+        self.destroy()
 
 
 __all__ = ["CreateProjectDialog"]
