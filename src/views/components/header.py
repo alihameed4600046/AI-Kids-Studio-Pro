@@ -1,28 +1,31 @@
-import tkinter as tk
-from tkinter import ttk
-import config
+import customtkinter as ctk
 
-class Header(ttk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.configure(style='Header.TFrame')
-        
-        # Application title
-        self.title_label = ttk.Label(self, text=config.APP_TITLE, style='Header.TLabel')
-        self.title_label.pack(side=tk.LEFT, padx=(10, 0))
 
-        # Application version
-        self.version_label = ttk.Label(self, text=config.APP_VERSION, style='Header.TLabel')
-        self.version_label.pack(side=tk.RIGHT, padx=(0, 10))
+class Header(ctk.CTkFrame):
+    def __init__(
+        self,
+        master,
+        height: int = 60,
+        logger=None,
+        **kwargs,
+    ):
+        super().__init__(
+            master,
+            height=height,
+            corner_radius=0,
+            fg_color="transparent",
+            **kwargs
+        )
 
-        self.pack(fill=tk.X)
+        self.pack_propagate(False)
 
-# Ensure theme awareness
-def apply_theme(theme):
-    ttk.Style().theme_use(theme)
+        # Title label on the left
+        self.title_label = ctk.CTkLabel(self, text="AI Kids Studio Pro")
+        self.title_label.pack(side="left", padx=(10, 0))
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    header = Header(root)
-    apply_theme('default')  # Replace with actual theme logic
-    root.mainloop()
+        # Version label on the right
+        self.version_label = ctk.CTkLabel(self, text="v1.0")
+        self.version_label.pack(side="right", padx=(0, 10))
+
+
+__all__ = ["Header"]
