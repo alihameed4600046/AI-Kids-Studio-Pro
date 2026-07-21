@@ -1,6 +1,7 @@
 """Project service for coordinating Project creation and persistence."""
 
 import uuid
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,7 @@ class ProjectService:
             repository: Optional ProjectRepository instance. Creates default if None.
         """
         self._repository = repository or ProjectRepository()
+        self._recent_projects: deque[str] = deque(maxlen=10)
 
     def create_project(
         self,
@@ -38,7 +40,7 @@ class ProjectService:
             New Project instance with generated id and timestamps.
         """
         now = datetime.now(timezone.utc).isoformat()
-        return Project(
+        project = Project(
             id=str(uuid.uuid4()),
             name=name,
             description=description,
@@ -47,6 +49,8 @@ class ProjectService:
             updated_at=now,
             project_path=project_path,
         )
+        self.add_recent_project(project)
+        return project
 
     def save_project(self, project: Project, file_path: Path) -> None:
         """Save a Project to a JSON file.
@@ -109,7 +113,34 @@ class ProjectService:
         if not self._repository.exists(file_path):
             raise FileNotFoundError(f"Project file not found at {file_path}")
 
-        return self._repository.load(file_path)
+        project = self._repository.load(file_path)
+        self.add_recent_project(project)
+        return project
+
+    def add_recent_project(self, project: Project) -> None:
+        """Add a project to the recent projects list.
+
+        Args:
+            project: Project to add to recent projects.
+        """
+        project_path = project.project_path
+
+        if self._recent_projects and self._recent_projects[0] == project_path:
+            return
+
+        self._recent_projects.appendleft(project_path)
+
+    def get_recent_projects(self) -> list[str]:
+        """Get the list of recent projects.
+
+        Returns:
+            List of recent project paths, most recent first.
+        """
+        return list(self._recent_projects)
+
+    def clear_recent_projects(self) -> None:
+        """Clear the recent projects list."""
+        self._recent_projects.clear()
 
 
 __all__ = ["ProjectService"]
