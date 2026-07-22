@@ -70,10 +70,10 @@ class MainWindow(ctk.CTk):
         window_settings = self._bootstrap.settings_manager.get("window", {"width": 1200, "height": 800})
         min_width = self._config.get("ui", "min_width", default=800)
         min_height = self._config.get("ui", "min_height", default=600)
-        app_title = self._config.get("app", "title", default="AI Kids Studio Pro")
+        self._app_title = self._config.get("app", "title", default="AI Kids Studio Pro")
 
         # Configure window
-        self.title(app_title)
+        self.title(self._app_title)
         self.geometry(f"{window_settings['width']}x{window_settings['height']}")
         self.minsize(min_width, min_height)
 
@@ -95,7 +95,7 @@ class MainWindow(ctk.CTk):
         # Save window geometry on close
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        self._logger.info("Main window initialized: %s (%dx%d)", app_title, window_settings['width'], window_settings['height'])
+        self._logger.info("Main window initialized: %s (%dx%d)", self._app_title, window_settings['width'], window_settings['height'])
 
         # Initialize NavigationManager and register HomePage
         self._navigation_manager = NavigationManager(self.content_container, self._logger)
@@ -274,6 +274,7 @@ class MainWindow(ctk.CTk):
             self.current_project = dialog.created_project
             project_name = dialog.created_project.name
             self.status_bar.set_status(f"Project created: {project_name}")
+            self.title(f"{self._app_title} - {project_name}")
             self._logger.info("Project created: %s", project_name)
         else:
             self._logger.debug("Create Project dialog cancelled")
