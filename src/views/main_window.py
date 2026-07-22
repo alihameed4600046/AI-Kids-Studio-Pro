@@ -18,6 +18,7 @@ from src.logging.logger import get_logger
 from src.config import Config
 from src.views.navigation import NavigationManager, HomePage
 from src.views.components import Header, Sidebar, StatusBar
+from src.views.dialogs.create_project_dialog import CreateProjectDialog
 
 
 __all__ = ["MainWindow"]
@@ -63,6 +64,7 @@ class MainWindow(ctk.CTk):
         self._config = config or bootstrap.config
         self._theme_manager = bootstrap.theme_manager
         self._logger = get_logger("main_window")
+        self.current_project = None
 
         # Get window settings from settings manager
         window_settings = self._bootstrap.settings_manager.get("window", {"width": 1200, "height": 800})
@@ -256,6 +258,25 @@ class MainWindow(ctk.CTk):
         except KeyError:
             # Ignore gracefully if page is not registered
             self._logger.debug("Page '%s' not registered, ignoring navigation", page_name)
+
+    def _open_create_project_dialog(self) -> None:
+        """Open the Create Project dialog as a modal window.
+
+        Creates the dialog, makes it modal using grab_set() and wait_window(),
+        and handles the result after the dialog closes.
+        """
+        dialog = CreateProjectDialog(self)
+        dialog.grab_set()
+        self.wait_window(dialog)
+
+        # After dialog closes, check if a project was created
+        if dialog.created_project is not None:
+            self.current_project = dialog.created_project
+            project_name = dialog.created_project.name
+            self.status_bar.set_status(f"Project created: {project_name}")
+            self._logger.info("Project created: %s", project_name)
+        else:
+            self._logger.debug("Create Project dialog cancelled")
 
     # ------------------------------------------------------------------
     # Public API for future UI modules
