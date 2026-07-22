@@ -65,6 +65,7 @@ class MainWindow(ctk.CTk):
         self._config = config or bootstrap.config
         self._theme_manager = bootstrap.theme_manager
         self._logger = get_logger("main_window")
+        self._project_service = ProjectService()
         self.current_project = None
 
         # Get window settings from settings manager
@@ -107,6 +108,9 @@ class MainWindow(ctk.CTk):
         self._navigation_manager.register_page("settings", HomePage)
         self._navigation_manager.navigate_to("home")
         self._logger.info("NavigationManager initialized with HomePage")
+
+        # Initialize recent projects display
+        self._refresh_recent_projects()
 
     def _center_window(self) -> None:
         """Center the window on the screen."""
@@ -277,6 +281,8 @@ class MainWindow(ctk.CTk):
             self.status_bar.set_status(f"Project created: {project_name}")
             self.title(f"{self._app_title} - {project_name}")
             self._logger.info("Project created: %s", project_name)
+            self._project_service.add_recent_project(dialog.created_project)
+            self._refresh_recent_projects()
         else:
             self._logger.debug("Create Project dialog cancelled")
 
@@ -302,11 +308,8 @@ class MainWindow(ctk.CTk):
             return
 
         try:
-            # Create ProjectService instance
-            project_service = ProjectService()
-
             # Open the project
-            project = project_service.open_project(selected_folder)
+            project = self._project_service.open_project(selected_folder)
 
             # On success
             self.current_project = project
@@ -314,6 +317,7 @@ class MainWindow(ctk.CTk):
             self.title(f"{self._app_title} - {project_name}")
             self.status_bar.set_status(f"Project opened: {project_name}")
             self._logger.info("Project opened: %s", project_name)
+            self._refresh_recent_projects()
 
         except FileNotFoundError:
             # Show error dialog for missing project.json
@@ -333,6 +337,114 @@ class MainWindow(ctk.CTk):
                 icon="cancel",
                 option_1="OK"
             )
+
+    def _refresh_recent_projects(self) -> None:
+        """Refresh the recent projects display on the Home page.
+
+        Reads recent projects from ProjectService and updates the Home page
+        placeholder area with a simple vertical list of recent project names.
+        If no recent projects exist, shows "No recent projects".
+        """
+        try:
+            recent_paths = self._project_service.get_recent_projects()
+
+            # Get the current home page instance
+            home_page = self._navigation_manager.get_current_page()
+            if home_page and hasattr(home_page, '_recent_projects_frame'):
+                # Update existing display
+                self._update_recent_projects_display(home_page, recent_paths)
+            else:
+                # Home page doesn't have the recent projects frame yet, create it
+                self._create_recent_projects_display(home_page, recent_paths)
+
+        except Exception as exc:
+            self._logger.warning("Failed to refresh recent projects: %s", exc)
+
+    def _create_recent_projects_display(self, home_page, recent_paths: list[str]) -> None:
+        """Create the recent projects display on the Home page.
+
+        Args:
+            home_page: The HomePage instance.
+            recent_paths: List of recent project paths.
+        """
+        if not home_page:
+            return
+
+        import customtkinter as ctk
+
+        # Clear existing content
+        for widget in home_page.winfo_children():
+            widget.destroy()
+
+        # Configure grid
+        home_page.grid_rowconfigure(0, weight=1)
+        home_page.grid_columnconfigure(0, weight=1)
+
+        # Create a frame for recent projects
+        recent_frame = ctk.CTkFrame(home_page, fg_color="transparent")
+        recent_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        recent_frame.grid_columnconfigure(0, weight=1)
+
+        # Title label
+        title_label = ctk.CTkLabel(
+            recent_frame,
+            text="Recent Projects",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            anchor="w"
+        )
+        title_label.grid(row=0, column=0, sticky="ew", pady=(0, 15))
+
+        # Store reference for updates
+        home_page._recent_projects_frame = recent_frame
+        home_page._recent_project_labels = []
+
+        # Display recent projects
+        self._update_recent_projects_display(home_page, recent_paths)
+
+    def _update_recent_projects_display(self, home_page, recent_paths: list[str]) -> None:
+        """Update the recent projects display.
+
+        Args:
+            home_page: The HomePage instance.
+            recent_paths: List of recent project paths.
+        """
+        if not home_page or not hasattr(home_page, '_recent_projects_frame'):
+            return
+
+        import customtkinter as ctk
+        from pathlib import Path
+
+        recent_frame = home_page._recent_projects_frame
+
+        # Clear existing project labels
+        for label in getattr(home_page, '_recent_project_labels', []):
+            label.destroy()
+        home_page._recent_project_labels = []
+
+        if not recent_paths:
+            # Show "No recent projects" message
+            no_projects_label = ctk.CTkLabel(
+                recent_frame,
+                text="No recent projects",
+                font=ctk.CTkFont(size=14),
+                anchor="w",
+                text_color="gray"
+            )
+            no_projects_label.grid(row=1, column=0, sticky="ew", pady=10)
+            home_page._recent_project_labels.append(no_projects_label)
+        else:
+            # Display each recent project
+            for i, project_path in enumerate(recent_paths):
+                project_name = Path(project_path).name
+                project_label = ctk.CTkLabel(
+                    recent_frame,
+                    text=f"• {project_name}",
+                    font=ctk.CTkFont(size=14),
+                    anchor="w",
+                    cursor="hand2"
+                )
+                project_label.grid(row=i + 1, column=0, sticky="ew", pady=2)
+                home_page._recent_project_labels.append(project_label)
 
     # ------------------------------------------------------------------
     # Public API for future UI modules
