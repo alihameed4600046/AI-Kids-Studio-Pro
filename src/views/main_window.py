@@ -175,7 +175,7 @@ class MainWindow(ctk.CTk):
         padding = theme_settings.padding
 
         # Header - spans full width at top
-        self.header = Header(self, height=60)
+        self.header = Header(self, height=60, on_new_project=self._open_create_project_dialog)
         self.header.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
 
         # Sidebar - left side, fixed width
