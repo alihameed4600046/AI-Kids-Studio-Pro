@@ -8,8 +8,8 @@ and layout using reusable UI components.
 from __future__ import annotations
 
 import customtkinter as ctk
+from tkinter import filedialog
 from typing import Optional
-from pathlib import Path
 
 from src.bootstrap import ApplicationBootstrap
 from src.theme.theme_manager import ThemeManager
@@ -19,6 +19,7 @@ from src.config import Config
 from src.views.navigation import NavigationManager, HomePage
 from src.views.components import Header, Sidebar, StatusBar
 from src.views.dialogs.create_project_dialog import CreateProjectDialog
+from src.project.project_service import ProjectService
 
 
 __all__ = ["MainWindow"]
@@ -278,6 +279,60 @@ class MainWindow(ctk.CTk):
             self._logger.info("Project created: %s", project_name)
         else:
             self._logger.debug("Create Project dialog cancelled")
+
+    def _open_existing_project(self) -> None:
+        """Open an existing project from a folder selection dialog.
+
+        Opens a folder selection dialog for the user to choose a project directory.
+        If the user cancels, returns immediately.
+        Attempts to open the project using ProjectService.open_project().
+        On success, updates the current project, window title, status bar, and logs success.
+        On FileNotFoundError, shows an error dialog.
+        On other exceptions, logs the exception and shows a friendly error dialog.
+        """
+        # Ask user to select a project folder
+        selected_folder = filedialog.askdirectory(
+            parent=self,
+            title="Open Project - Select Project Folder"
+        )
+
+        # User cancelled
+        if not selected_folder:
+            self._logger.debug("Open Project dialog cancelled by user")
+            return
+
+        try:
+            # Create ProjectService instance
+            project_service = ProjectService()
+
+            # Open the project
+            project = project_service.open_project(selected_folder)
+
+            # On success
+            self.current_project = project
+            project_name = project.name
+            self.title(f"{self._app_title} - {project_name}")
+            self.status_bar.set_status(f"Project opened: {project_name}")
+            self._logger.info("Project opened: %s", project_name)
+
+        except FileNotFoundError:
+            # Show error dialog for missing project.json
+            self._logger.warning("Project file not found in: %s", selected_folder)
+            ctk.CTkMessagebox(
+                title="Project Not Found",
+                message="No project.json found in the selected folder.",
+                icon="cancel",
+                option_1="OK"
+            )
+        except Exception as exc:
+            # Log exception and show friendly error dialog
+            self._logger.exception("Failed to open project: %s", exc)
+            ctk.CTkMessagebox(
+                title="Error Opening Project",
+                message=f"An error occurred while opening the project:\n{str(exc)}",
+                icon="cancel",
+                option_1="OK"
+            )
 
     # ------------------------------------------------------------------
     # Public API for future UI modules
