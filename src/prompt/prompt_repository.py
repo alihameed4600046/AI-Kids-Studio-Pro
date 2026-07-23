@@ -4,11 +4,31 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 from src.prompt.prompt import Prompt
 
 logger = logging.getLogger(__name__)
+
+BUILTIN_PROMPT_CATEGORIES: List[str] = [
+    "Story",
+    "ABC",
+    "Numbers",
+    "Rhymes",
+    "Image Prompt",
+    "Video Prompt",
+    "Voice Script",
+    "General",
+]
+
+BUILTIN_DEFAULT_PROMPT_TEMPLATES: Dict[str, str] = {
+    "Story": "Write a children's story about {{topic}}.",
+    "ABC": "Generate a lesson for letter {{letter}}.",
+    "Numbers": "Create a counting exercise for numbers {{numbers}}.",
+    "Image Prompt": "Create a Pixar-style image of {{subject}}.",
+    "Video Prompt": "Create an animation scene for {{topic}}.",
+    "Voice Script": "Generate a narration for {{topic}}.",
+}
 
 
 class PromptRepository:
@@ -174,3 +194,24 @@ class PromptRepository:
         """
         self._ensure_loaded()
         return len(self._prompts)
+
+    def get_categories(self) -> List[str]:
+        """Return built-in prompt categories.
+
+        Returns:
+            A list of built-in prompt categories.
+        """
+        logger.debug("Retrieved %d built-in prompt categories", len(BUILTIN_PROMPT_CATEGORIES))
+        return BUILTIN_PROMPT_CATEGORIES.copy()
+
+    def get_default_templates(self) -> Dict[str, str]:
+        """Return built-in default prompt templates.
+
+        Returns:
+            A mapping of category names to default template strings.
+        """
+        logger.debug(
+            "Retrieved %d built-in default prompt templates",
+            len(BUILTIN_DEFAULT_PROMPT_TEMPLATES),
+        )
+        return BUILTIN_DEFAULT_PROMPT_TEMPLATES.copy()

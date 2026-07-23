@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 from src.prompt.prompt import Prompt
 from src.prompt.prompt_repository import PromptRepository
@@ -141,6 +141,29 @@ class PromptService:
             category,
         )
         return prompts
+
+    def get_categories(self) -> List[str]:
+        """Return the available prompt categories.
+
+        Returns:
+            A list of built-in prompt categories.
+        """
+        categories = self._repository.get_categories()
+        logger.debug("Retrieved %d categories from PromptService", len(categories))
+        return categories
+
+    def get_default_templates(self) -> Dict[str, str]:
+        """Return the default prompt templates.
+
+        Returns:
+            A mapping of built-in categories to placeholder templates.
+        """
+        templates = self._repository.get_default_templates()
+        logger.debug(
+            "Retrieved %d default templates from PromptService",
+            len(templates),
+        )
+        return templates
 
 
 __all__ = ["PromptService"]
