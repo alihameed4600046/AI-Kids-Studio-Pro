@@ -109,6 +109,9 @@ class MainWindow(ctk.CTk):
         self._navigation_manager.navigate_to("home")
         self._logger.info("NavigationManager initialized with HomePage")
 
+        # Initialize project dashboard
+        self._refresh_project_dashboard()
+
         # Initialize recent projects display
         self._refresh_recent_projects()
 
@@ -283,6 +286,7 @@ class MainWindow(ctk.CTk):
             self._logger.info("Project created: %s", project_name)
             self._project_service.add_recent_project(dialog.created_project)
             self._refresh_recent_projects()
+            self._refresh_project_dashboard()
         else:
             self._logger.debug("Create Project dialog cancelled")
 
@@ -318,6 +322,7 @@ class MainWindow(ctk.CTk):
             self.status_bar.set_status(f"Project opened: {project_name}")
             self._logger.info("Project opened: %s", project_name)
             self._refresh_recent_projects()
+            self._refresh_project_dashboard()
 
         except FileNotFoundError:
             # Show error dialog for missing project.json
@@ -337,6 +342,99 @@ class MainWindow(ctk.CTk):
                 icon="cancel",
                 option_1="OK"
             )
+
+    def _refresh_project_dashboard(self) -> None:
+        """Refresh the project dashboard on the Home page.
+
+        Displays basic information about the currently opened project:
+        - Project Name
+        - Description
+        - Category
+        - Project Location
+
+        If no project is open, displays "No project opened".
+        """
+        try:
+            # Get the current home page instance
+            home_page = self._navigation_manager.get_current_page()
+            if not home_page:
+                return
+
+            import customtkinter as ctk
+
+            # Clear existing content
+            for widget in home_page.winfo_children():
+                widget.destroy()
+
+            # Configure grid
+            home_page.grid_rowconfigure(0, weight=1)
+            home_page.grid_columnconfigure(0, weight=1)
+
+            # Create a frame for the dashboard
+            dashboard_frame = ctk.CTkFrame(home_page, fg_color="transparent")
+            dashboard_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+            dashboard_frame.grid_columnconfigure(0, weight=1)
+
+            if self.current_project is None:
+                # No project opened
+                no_project_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text="No project opened",
+                    font=ctk.CTkFont(size=20, weight="bold"),
+                    anchor="w"
+                )
+                no_project_label.grid(row=0, column=0, sticky="ew", pady=20)
+            else:
+                # Display project information
+                project = self.current_project
+
+                # Title
+                title_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text="Project Dashboard",
+                    font=ctk.CTkFont(size=20, weight="bold"),
+                    anchor="w"
+                )
+                title_label.grid(row=0, column=0, sticky="ew", pady=(0, 20))
+
+                # Project Name
+                name_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text=f"Project Name: {project.name}",
+                    font=ctk.CTkFont(size=14),
+                    anchor="w"
+                )
+                name_label.grid(row=1, column=0, sticky="ew", pady=5)
+
+                # Description
+                desc_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text=f"Description: {project.description}",
+                    font=ctk.CTkFont(size=14),
+                    anchor="w"
+                )
+                desc_label.grid(row=2, column=0, sticky="ew", pady=5)
+
+                # Category
+                cat_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text=f"Category: {project.category}",
+                    font=ctk.CTkFont(size=14),
+                    anchor="w"
+                )
+                cat_label.grid(row=3, column=0, sticky="ew", pady=5)
+
+                # Project Location
+                loc_label = ctk.CTkLabel(
+                    dashboard_frame,
+                    text=f"Project Location: {project.project_path}",
+                    font=ctk.CTkFont(size=14),
+                    anchor="w"
+                )
+                loc_label.grid(row=4, column=0, sticky="ew", pady=5)
+
+        except Exception as exc:
+            self._logger.warning("Failed to refresh project dashboard: %s", exc)
 
     def _refresh_recent_projects(self) -> None:
         """Refresh the recent projects display on the Home page.
