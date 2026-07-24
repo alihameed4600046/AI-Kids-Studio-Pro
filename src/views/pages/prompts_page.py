@@ -176,6 +176,7 @@ class PromptsPage(BasePage):
         variables_label.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="w")
 
         self._variables_var = ctk.StringVar()
+        self._variables_var.trace_add("write", lambda *_: self._update_preview())
         self._variables_entry = ctk.CTkEntry(
             variables_frame,
             textvariable=self._variables_var,
@@ -250,8 +251,7 @@ class PromptsPage(BasePage):
                 self._template_editor.insert("1.0", template_text)
                 self._title_var.set(template_name)
                 # Extract variables from template (simple extraction of {{...}})
-                import re
-                variables = re.findall(r"\{\{(\w+)\}\}", template_text)
+                variables = self._extract_variables(template_text)
                 self._variables_var.set(", ".join(variables))
                 self._update_preview()
         except Exception as e:
@@ -275,23 +275,73 @@ class PromptsPage(BasePage):
         self._logger.info("Delete button clicked (not implemented)")
         # TODO: Implement delete functionality using PromptService
 
+    def _parse_variables(self, variables_text: str) -> dict[str, str]:
+        """Parse variables from key=value format.
+
+        Args:
+            variables_text: Comma-separated key=value pairs (e.g., "animal=Panda,place=Forest").
+
+        Returns:
+            Dictionary mapping variable names to their values. Invalid entries are ignored.
+        """
+        variables: dict[str, str] = {}
+        if not variables_text.strip():
+            return variables
+
+        for pair in variables_text.split(","):
+            pair = pair.strip()
+            if not pair:
+                continue
+            if "=" not in pair:
+                self._logger.debug("Ignoring invalid variable entry: %s", pair)
+                continue
+            key, value = pair.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key:
+                variables[key] = value
+            else:
+                self._logger.debug("Ignoring variable with empty key: %s", pair)
+
+        return variables
+
+    def _extract_variables(self, template_text: str) -> list[str]:
+        """Extract variable names from template text using simple string scanning.
+
+        Args:
+            template_text: Template text containing {{variable}} placeholders.
+
+        Returns:
+            List of variable names found in the template.
+        """
+        variables: list[str] = []
+        start = 0
+        while True:
+            # Find the next {{ pattern
+            open_idx = template_text.find("{{", start)
+            if open_idx == -1:
+                break
+            # Find the closing }} pattern
+            close_idx = template_text.find("}}", open_idx + 2)
+            if close_idx == -1:
+                break
+            # Extract the variable name between {{ and }}
+            var_name = template_text[open_idx + 2 : close_idx].strip()
+            if var_name and var_name not in variables:
+                variables.append(var_name)
+            start = close_idx + 2
+        return variables
+
     def _update_preview(self) -> None:
         """Update the live preview with the current template and variables."""
         template = self._template_editor.get("1.0", "end-1c")
         variables_text = self._variables_var.get()
 
-        # Parse variables (comma separated)
-        variables = {}
-        if variables_text.strip():
-            for var in variables_text.split(","):
-                var = var.strip()
-                if var:
-                    variables[var] = f"{{{{{var}}}}}"
+        # Parse variables from key=value format
+        variables = self._parse_variables(variables_text)
 
-        # Replace variables in template
-        preview_text = template
-        for var_name, var_placeholder in variables.items():
-            preview_text = preview_text.replace(f"{{{{{var_name}}}}}", f"[{var_name}]")
+        # Render template using PromptService
+        preview_text = self._prompt_service.render_template(template, variables)
 
         # Update preview textbox
         self._preview_textbox.configure(state="normal")

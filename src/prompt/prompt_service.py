@@ -185,5 +185,34 @@ class PromptService:
         )
         return templates
 
+    def render_template(
+        self,
+        template: str,
+        variables: dict[str, str],
+    ) -> str:
+        """Render a template by replacing placeholders with variable values.
+
+        Replaces every {{variable}} placeholder with its matching value from
+        the variables dictionary. If a variable has no value, the placeholder
+        is left unchanged.
+
+        Args:
+            template: The template string containing {{variable}} placeholders.
+            variables: Dictionary mapping variable names to their values.
+
+        Returns:
+            The rendered template string with placeholders replaced.
+        """
+        if not template:
+            return ""
+
+        rendered = template
+        for var_name, var_value in variables.items():
+            placeholder = f"{{{{{var_name}}}}}"
+            rendered = rendered.replace(placeholder, var_value)
+
+        logger.debug("Rendered template with %d variables", len(variables))
+        return rendered
+
 
 __all__ = ["PromptService"]
