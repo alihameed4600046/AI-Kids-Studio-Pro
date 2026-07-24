@@ -49,11 +49,21 @@ class PromptService:
 
         Returns:
             Created Prompt instance.
+
+        Raises:
+            ValueError: If title, category, or template is empty.
         """
+        if not title or not title.strip():
+            raise ValueError("Prompt title cannot be empty")
+        if not category or not category.strip():
+            raise ValueError("Prompt category cannot be empty")
+        if not template or not template.strip():
+            raise ValueError("Prompt template cannot be empty")
+
         prompt = Prompt(
-            title=title,
-            category=category,
-            template=template,
+            title=title.strip(),
+            category=category.strip(),
+            template=template.strip(),
             variables=variables or {},
         )
         saved_prompt = self._repository.save(prompt)
@@ -79,12 +89,22 @@ class PromptService:
 
         Returns:
             Updated Prompt instance.
+
+        Raises:
+            ValueError: If title, category, or template is empty when provided.
         """
+        if title is not None and (not title or not title.strip()):
+            raise ValueError("Prompt title cannot be empty")
+        if category is not None and (not category or not category.strip()):
+            raise ValueError("Prompt category cannot be empty")
+        if template is not None and (not template or not template.strip()):
+            raise ValueError("Prompt template cannot be empty")
+
         prompt = self._repository.load(prompt_id)
         prompt.update(
-            title=title,
-            category=category,
-            template=template,
+            title=title.strip() if title is not None else None,
+            category=category.strip() if category is not None else None,
+            template=template.strip() if template is not None else None,
             variables=variables,
         )
         saved_prompt = self._repository.save(prompt)
