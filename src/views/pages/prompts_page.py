@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import customtkinter as ctk
 import logging
+from tkinter import filedialog, messagebox
 from typing import Any, TYPE_CHECKING
 
 from src.prompt.prompt_service import PromptService
@@ -78,6 +79,8 @@ class PromptsPage(BasePage):
         toolbar_frame.grid_columnconfigure(4, weight=0)  # New button
         toolbar_frame.grid_columnconfigure(5, weight=0)  # Save button
         toolbar_frame.grid_columnconfigure(6, weight=0)  # Delete button
+        toolbar_frame.grid_columnconfigure(7, weight=0)  # History button
+        toolbar_frame.grid_columnconfigure(8, weight=0)  # Export button
 
         # Category label and dropdown
         category_label = ctk.CTkLabel(toolbar_frame, text="Category:")
@@ -130,7 +133,23 @@ class PromptsPage(BasePage):
             width=80,
             command=self._on_delete_clicked,
         )
-        self._delete_button.grid(row=0, column=6, padx=(0, 10), pady=10)
+        self._delete_button.grid(row=0, column=6, padx=(0, 5), pady=10)
+
+        self._history_button = ctk.CTkButton(
+            toolbar_frame,
+            text="History",
+            width=80,
+            command=self._on_history_clicked,
+        )
+        self._history_button.grid(row=0, column=7, padx=(0, 5), pady=10)
+
+        self._export_button = ctk.CTkButton(
+            toolbar_frame,
+            text="Export",
+            width=80,
+            command=self._on_export_clicked,
+        )
+        self._export_button.grid(row=0, column=8, padx=(0, 10), pady=10)
 
     def _create_title_entry(self) -> None:
         """Create the prompt title entry field."""
@@ -266,9 +285,20 @@ class PromptsPage(BasePage):
         self._update_preview()
 
     def _on_save_clicked(self) -> None:
-        """Handle Save button click - placeholder for future implementation."""
-        self._logger.info("Save button clicked (not implemented)")
-        # TODO: Implement save functionality using PromptService
+        """Handle Save button click - save prompt and add to history."""
+        self._logger.info("Save button clicked")
+        template = self._template_editor.get("1.0", "end-1c")
+        variables_text = self._variables_var.get()
+        variables = self._parse_variables(variables_text)
+        preview_text = self._prompt_service.render_template(template, variables)
+
+        if preview_text.strip():
+            title = self._title_var.get() or "Untitled"
+            category = self._category_var.get() or "general"
+            self._prompt_service.add_to_history(preview_text, category, title)
+            self._logger.info("Added prompt to history: %s", title)
+        else:
+            self._logger.warning("No content to save")
 
     def _on_delete_clicked(self) -> None:
         """Handle Delete button click - placeholder for future implementation."""
@@ -368,6 +398,166 @@ class PromptsPage(BasePage):
         """
         super().on_navigate_to(**kwargs)
         self._logger.debug("Navigated to PromptsPage with params: %s", kwargs)
+
+    def _on_export_clicked(self) -> None:
+        """Handle Export button click - save the current preview to a text file."""
+        self._logger.info("Export button clicked")
+
+        self._preview_textbox.configure(state="normal")
+        try:
+            preview_text = self._preview_textbox.get("1.0", "end-1c")
+        finally:
+            self._preview_textbox.configure(state="disabled")
+
+        if not preview_text.strip():
+            self._logger.warning("No preview content to export")
+            messagebox.showwarning(
+                "Export Prompt",
+                "The current preview is empty. Nothing to export.",
+            )
+            return
+
+        try:
+            file_path = filedialog.asksaveasfilename(
+                initialfile="prompt.txt",
+                defaultextension=".txt",
+                title="Export Prompt",
+            )
+            if not file_path:
+                self._logger.info("Export cancelled by user")
+                return
+
+            with open(file_path, "w", encoding="utf-8") as file_handle:
+                file_handle.write(preview_text)
+
+            self._logger.info("Exported prompt to file: %s", file_path)
+            messagebox.showinfo(
+                "Export Prompt",
+                f"Prompt exported successfully to {file_path}",
+            )
+        except PermissionError as exc:
+            self._logger.error("Permission denied while exporting prompt: %s", exc)
+            messagebox.showerror(
+                "Export Prompt",
+                f"Permission denied while saving the file: {exc}",
+            )
+        except OSError as exc:
+            self._logger.error("Failed to export prompt: %s", exc)
+            messagebox.showerror(
+                "Export Prompt",
+                f"Could not save the file: {exc}",
+            )
+
+    def _on_history_clicked(self) -> None:
+        """Handle History button click - open history window."""
+        self._logger.info("History button clicked")
+        history = self._prompt_service.get_history()
+        if not history:
+            self._logger.info("History is empty")
+            # Show a simple info dialog
+            info_dialog = ctk.CTkToplevel(self)
+            info_dialog.title("Prompt History")
+            info_dialog.geometry("400x200")
+            info_dialog.transient(self)
+            info_dialog.grab_set()
+            info_dialog.grid_rowconfigure(0, weight=1)
+            info_dialog.grid_columnconfigure(0, weight=1)
+            label = ctk.CTkLabel(info_dialog, text="No prompt history available yet.\nRender some prompts to see history here.")
+            label.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+            close_btn = ctk.CTkButton(info_dialog, text="Close", command=info_dialog.destroy)
+            close_btn.grid(row=1, column=0, padx=20, pady=(0, 20))
+            return
+
+        # Create history window
+        history_window = ctk.CTkToplevel(self)
+        history_window.title("Prompt History")
+        history_window.geometry("700x500")
+        history_window.transient(self)
+        history_window.grab_set()
+        history_window.grid_rowconfigure(1, weight=1)
+        history_window.grid_columnconfigure(0, weight=1)
+
+        # Title
+        title_label = ctk.CTkLabel(history_window, text="Prompt History (Newest First)", font=ctk.CTkFont(size=14, weight="bold"))
+        title_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+
+        # List frame with scrollable list
+        list_frame = ctk.CTkScrollableFrame(history_window)
+        list_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+        list_frame.grid_columnconfigure(0, weight=1)
+
+        # Preview frame
+        preview_frame = ctk.CTkFrame(history_window)
+        preview_frame.grid(row=2, column=0, padx=10, pady=(5, 10), sticky="ew")
+        preview_frame.grid_columnconfigure(0, weight=1)
+        preview_frame.grid_rowconfigure(1, weight=1)
+
+        preview_label = ctk.CTkLabel(preview_frame, text="Rendered Prompt:", font=ctk.CTkFont(weight="bold"))
+        preview_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+
+        preview_textbox = ctk.CTkTextbox(
+            preview_frame,
+            font=ctk.CTkFont(family="Consolas", size=11),
+            wrap="word",
+            state="disabled",
+            height=150,
+        )
+        preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+
+        # Populate history list
+        for idx, entry in enumerate(history):
+            timestamp = entry["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+            title = entry["title"]
+            category = entry["category"]
+            rendered_text = entry["rendered_text"]
+
+            # Create a frame for each history item
+            item_frame = ctk.CTkFrame(list_frame)
+            item_frame.grid(row=idx, column=0, padx=5, pady=5, sticky="ew")
+            item_frame.grid_columnconfigure(1, weight=1)
+
+            # Timestamp
+            time_label = ctk.CTkLabel(item_frame, text=timestamp, font=ctk.CTkFont(size=11), width=150, anchor="w")
+            time_label.grid(row=0, column=0, padx=(10, 5), pady=5, sticky="w")
+
+            # Title and category
+            info_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+            info_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+            info_frame.grid_columnconfigure(0, weight=1)
+
+            title_label = ctk.CTkLabel(info_frame, text=title, font=ctk.CTkFont(size=12, weight="bold"), anchor="w")
+            title_label.grid(row=0, column=0, sticky="ew")
+
+            category_label = ctk.CTkLabel(info_frame, text=f"Category: {category}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w")
+            category_label.grid(row=1, column=0, sticky="ew")
+
+            # Make the whole item frame clickable
+            def make_click_handler(text=rendered_text):
+                def handler(event=None):
+                    preview_textbox.configure(state="normal")
+                    preview_textbox.delete("1.0", "end")
+                    preview_textbox.insert("1.0", text)
+                    preview_textbox.configure(state="disabled")
+                return handler
+
+            handler = make_click_handler()
+            item_frame.bind("<Button-1>", handler)
+            time_label.bind("<Button-1>", handler)
+            info_frame.bind("<Button-1>", handler)
+            title_label.bind("<Button-1>", handler)
+            category_label.bind("<Button-1>", handler)
+
+        # Close button
+        close_btn = ctk.CTkButton(history_window, text="Close", width=100, command=history_window.destroy)
+        close_btn.grid(row=3, column=0, padx=10, pady=(0, 10))
+
+        # Select first item by default
+        if history:
+            first_entry = history[0]
+            preview_textbox.configure(state="normal")
+            preview_textbox.delete("1.0", "end")
+            preview_textbox.insert("1.0", first_entry["rendered_text"])
+            preview_textbox.configure(state="disabled")
 
     def on_navigate_from(self) -> None:
         """Called when navigating away from this page."""

@@ -1,6 +1,7 @@
 """Prompt service for managing Prompt lifecycle operations."""
 
 import logging
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -30,6 +31,8 @@ class PromptService:
         self._repository = repository or PromptRepository(
             storage_path or DEFAULT_PROMPT_STORAGE
         )
+        # In-memory history of last 20 rendered prompts
+        self._history: deque[dict] = deque(maxlen=20)
         logger.info("PromptService initialized with repository %s", self._repository)
 
     def create_prompt(
@@ -213,6 +216,42 @@ class PromptService:
 
         logger.debug("Rendered template with %d variables", len(variables))
         return rendered
+
+    def add_to_history(
+        self,
+        rendered_text: str,
+        category: str,
+        title: str,
+    ) -> None:
+        """Add a rendered prompt to the in-memory history.
+
+        Args:
+            rendered_text: The fully rendered prompt text.
+            category: The prompt category.
+            title: The prompt title.
+        """
+        entry = {
+            "rendered_text": rendered_text,
+            "timestamp": datetime.now(timezone.utc),
+            "category": category,
+            "title": title,
+        }
+        self._history.appendleft(entry)
+        logger.debug("Added prompt to history: %s", title)
+
+    def get_history(self) -> list[dict]:
+        """Get the prompt history (newest first).
+
+        Returns:
+            List of history entries, each containing rendered_text, timestamp,
+            category, and title. Newest entries first.
+        """
+        return list(self._history)
+
+    def clear_history(self) -> None:
+        """Clear the in-memory prompt history."""
+        self._history.clear()
+        logger.debug("Cleared prompt history")
 
 
 __all__ = ["PromptService"]
