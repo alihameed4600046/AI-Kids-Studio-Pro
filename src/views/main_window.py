@@ -17,9 +17,12 @@ from src.theme.theme_models import ThemeSettings
 from src.logging.logger import get_logger
 from src.config import Config
 from src.views.navigation import NavigationManager, HomePage
+from src.views.pages.prompts_page import PromptsPage
 from src.views.components import Header, Sidebar, StatusBar
 from src.views.dialogs.create_project_dialog import CreateProjectDialog
 from src.project.project_service import ProjectService
+from src.prompt.variable_registry import VariableRegistry
+from src.prompt.template_registry import TemplateRegistry
 
 
 __all__ = ["MainWindow"]
@@ -67,6 +70,10 @@ class MainWindow(ctk.CTk):
         self._logger = get_logger("main_window")
         self._project_service = ProjectService()
         self.current_project = None
+        # Create shared VariableRegistry instance
+        self._variable_registry = VariableRegistry()
+        # Create shared TemplateRegistry instance, injecting the shared VariableRegistry
+        self._template_registry = TemplateRegistry(self._variable_registry)
 
         # Get window settings from settings manager
         window_settings = self._bootstrap.settings_manager.get("window", {"width": 1200, "height": 800})
@@ -100,10 +107,17 @@ class MainWindow(ctk.CTk):
         self._logger.info("Main window initialized: %s (%dx%d)", self._app_title, window_settings['width'], window_settings['height'])
 
         # Initialize NavigationManager and register HomePage
-        self._navigation_manager = NavigationManager(self.content_container, self._logger)
+        self._navigation_manager = NavigationManager(
+            self.content_container,
+            self._logger,
+            shared_dependencies={
+                "variable_registry": self._variable_registry,
+                "template_registry": self._template_registry
+            }
+        )
         self._navigation_manager.register_page("home", HomePage)
         self._navigation_manager.register_page("projects", HomePage)
-        self._navigation_manager.register_page("prompts", HomePage)
+        self._navigation_manager.register_page("prompts", PromptsPage)
         self._navigation_manager.register_page("voices", HomePage)
         self._navigation_manager.register_page("settings", HomePage)
         self._navigation_manager.navigate_to("home")
@@ -263,9 +277,10 @@ class MainWindow(ctk.CTk):
         """
         try:
             self._navigation_manager.navigate_to(page_name.lower())
-        except KeyError:
-            # Ignore gracefully if page is not registered
-            self._logger.debug("Page '%s' not registered, ignoring navigation", page_name)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            raise
 
     def _open_create_project_dialog(self) -> None:
         """Open the Create Project dialog as a modal window.

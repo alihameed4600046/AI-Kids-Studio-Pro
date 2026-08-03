@@ -1,565 +1,657 @@
-"""Prompt Editor page for AI Kids Studio Pro.
+'''Prompt Editor page for AI Kids Studio Pro.
 
 This module provides the PromptsPage class for managing prompt templates
 with a live preview panel.
-"""
+'''
 
 from __future__ import annotations
 
-import customtkinter as ctk
 import logging
-from tkinter import filedialog, messagebox
 from typing import Any, TYPE_CHECKING
 
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+
 from src.prompt.prompt_service import PromptService
+from src.prompt.template_registry import TemplateRegistry, TemplateDefinition
+from src.prompt.variable_registry import VariableRegistry
 from src.views.pages.base_page import BasePage
 
 if TYPE_CHECKING:
     from src.navigation.navigation_manager import NavigationManager
 
 
-__all__ = ["PromptsPage"]
+__all__ = ['PromptsPage']
 
 
 class PromptsPage(BasePage):
-    """Prompt Editor page with live preview functionality.
-
-    This page provides a UI for managing prompt templates with categories,
-    templates, a template editor, variables input, and live preview.
-    """
+    '''Prompt Editor page with live preview functionality.'''
 
     def __init__(
         self,
         master: ctk.CTkBaseClass,
-        navigation_manager: "NavigationManager",
+        navigation_manager: 'NavigationManager',
         prompt_service: PromptService | None = None,
+        template_registry: TemplateRegistry | None = None,
+        variable_registry: VariableRegistry | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the Prompts page.
-
-        Args:
-            master: Parent widget (typically the content container).
-            navigation_manager: Reference to the NavigationManager instance.
-            prompt_service: Optional PromptService instance for data access.
-            **kwargs: Additional arguments passed to CTkFrame.
-        """
         super().__init__(master, navigation_manager, **kwargs)
         self._prompt_service = prompt_service or PromptService()
-        self._logger = logging.getLogger(f"page.{self.__class__.__name__}")
+        if template_registry is None:
+            raise RuntimeError("TemplateRegistry dependency was not injected into PromptsPage.")
+        self._template_registry = template_registry
+        if variable_registry is None:
+            raise RuntimeError("VariableRegistry dependency was not injected into PromptsPage.")
+        self._variable_registry = variable_registry
+        self._variable_widgets: dict[str, Any] = {}
+        self._variable_widget_vars: dict[str, Any] = {}
+        self._logger = logging.getLogger(f'page.{self.__class__.__name__}')
+        self._selected_prompt_id: str | None = None
+        self._selected_prompt: Any | None = None
+        self._saved_prompts: list[Any] = []
 
-        # Configure grid layout for the page
-        self.grid_rowconfigure(0, weight=0)  # Toolbar row
-        self.grid_rowconfigure(1, weight=0)  # Title row
-        self.grid_rowconfigure(2, weight=1)  # Template editor row (expands)
-        self.grid_rowconfigure(3, weight=0)  # Variables row
-        self.grid_rowconfigure(4, weight=1)  # Live preview row (expands)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(3, weight=0)
+        self.grid_rowconfigure(4, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Initialize UI components
         self._create_toolbar()
         self._create_title_entry()
         self._create_template_editor()
         self._create_variables_entry()
         self._create_live_preview()
 
-        # Load initial data
         self._load_categories()
         self._load_templates()
+        self._load_saved_prompts()
 
-        self._logger.info("PromptsPage initialized")
+        self._logger.info('PromptsPage initialized')
 
     def _create_toolbar(self) -> None:
-        """Create the toolbar with category, template dropdowns and action buttons."""
         toolbar_frame = ctk.CTkFrame(self)
-        toolbar_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
-        toolbar_frame.grid_columnconfigure(0, weight=0)  # Category label
-        toolbar_frame.grid_columnconfigure(1, weight=1)  # Category dropdown
-        toolbar_frame.grid_columnconfigure(2, weight=0)  # Template label
-        toolbar_frame.grid_columnconfigure(3, weight=1)  # Template dropdown
-        toolbar_frame.grid_columnconfigure(4, weight=0)  # New button
-        toolbar_frame.grid_columnconfigure(5, weight=0)  # Save button
-        toolbar_frame.grid_columnconfigure(6, weight=0)  # Delete button
-        toolbar_frame.grid_columnconfigure(7, weight=0)  # History button
-        toolbar_frame.grid_columnconfigure(8, weight=0)  # Export button
+        toolbar_frame.grid(row=0, column=0, sticky='ew', padx=10, pady=(10, 5))
+        toolbar_frame.grid_columnconfigure(0, weight=0)
+        toolbar_frame.grid_columnconfigure(1, weight=1)
+        toolbar_frame.grid_columnconfigure(2, weight=0)
+        toolbar_frame.grid_columnconfigure(3, weight=1)
+        toolbar_frame.grid_columnconfigure(4, weight=0)
+        toolbar_frame.grid_columnconfigure(5, weight=1)
+        toolbar_frame.grid_columnconfigure(6, weight=0)
+        toolbar_frame.grid_columnconfigure(7, weight=0)
+        toolbar_frame.grid_columnconfigure(8, weight=0)
+        toolbar_frame.grid_columnconfigure(9, weight=0)
+        toolbar_frame.grid_columnconfigure(10, weight=0)
 
-        # Category label and dropdown
-        category_label = ctk.CTkLabel(toolbar_frame, text="Category:")
-        category_label.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="w")
-
+        ctk.CTkLabel(toolbar_frame, text='Category:').grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
         self._category_var = ctk.StringVar()
         self._category_dropdown = ctk.CTkComboBox(
             toolbar_frame,
             variable=self._category_var,
             values=[],
-            state="readonly",
+            state='readonly',
             command=self._on_category_changed,
         )
-        self._category_dropdown.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ew")
+        self._category_dropdown.grid(row=0, column=1, padx=(0, 10), pady=10, sticky='ew')
 
-        # Template label and dropdown
-        template_label = ctk.CTkLabel(toolbar_frame, text="Template:")
-        template_label.grid(row=0, column=2, padx=(10, 5), pady=10, sticky="w")
-
+        ctk.CTkLabel(toolbar_frame, text='Template:').grid(row=0, column=2, padx=(10, 5), pady=10, sticky='w')
         self._template_var = ctk.StringVar()
         self._template_dropdown = ctk.CTkComboBox(
             toolbar_frame,
             variable=self._template_var,
             values=[],
-            state="readonly",
+            state='readonly',
             command=self._on_template_changed,
         )
-        self._template_dropdown.grid(row=0, column=3, padx=(0, 10), pady=10, sticky="ew")
+        self._template_dropdown.grid(row=0, column=3, padx=(0, 10), pady=10, sticky='ew')
 
-        # Action buttons
-        self._new_button = ctk.CTkButton(
+        ctk.CTkLabel(toolbar_frame, text='Saved Prompt:').grid(row=0, column=4, padx=(10, 5), pady=10, sticky='w')
+        self._saved_prompt_var = ctk.StringVar()
+        self._saved_prompt_dropdown = ctk.CTkComboBox(
             toolbar_frame,
-            text="New",
-            width=80,
-            command=self._on_new_clicked,
+            variable=self._saved_prompt_var,
+            values=[],
+            state='readonly',
+            command=self._on_saved_prompt_changed,
         )
-        self._new_button.grid(row=0, column=4, padx=(0, 5), pady=10)
+        self._saved_prompt_dropdown.grid(row=0, column=5, padx=(0, 10), pady=10, sticky='ew')
 
-        self._save_button = ctk.CTkButton(
-            toolbar_frame,
-            text="Save",
-            width=80,
-            command=self._on_save_clicked,
-        )
-        self._save_button.grid(row=0, column=5, padx=(0, 5), pady=10)
+        self._new_button = ctk.CTkButton(toolbar_frame, text='New', width=80, command=self._on_new_clicked)
+        self._new_button.grid(row=0, column=6, padx=(0, 5), pady=10)
 
-        self._delete_button = ctk.CTkButton(
-            toolbar_frame,
-            text="Delete",
-            width=80,
-            command=self._on_delete_clicked,
-        )
-        self._delete_button.grid(row=0, column=6, padx=(0, 5), pady=10)
+        self._save_button = ctk.CTkButton(toolbar_frame, text='Save', width=80, command=self._on_save_clicked)
+        self._save_button.grid(row=0, column=7, padx=(0, 5), pady=10)
 
-        self._history_button = ctk.CTkButton(
-            toolbar_frame,
-            text="History",
-            width=80,
-            command=self._on_history_clicked,
-        )
-        self._history_button.grid(row=0, column=7, padx=(0, 5), pady=10)
+        self._delete_button = ctk.CTkButton(toolbar_frame, text='Delete', width=80, command=self._on_delete_clicked)
+        self._delete_button.grid(row=0, column=8, padx=(0, 5), pady=10)
 
-        self._export_button = ctk.CTkButton(
-            toolbar_frame,
-            text="Export",
-            width=80,
-            command=self._on_export_clicked,
-        )
-        self._export_button.grid(row=0, column=8, padx=(0, 10), pady=10)
+        self._history_button = ctk.CTkButton(toolbar_frame, text='History', width=80, command=self._on_history_clicked)
+        self._history_button.grid(row=0, column=9, padx=(0, 5), pady=10)
+
+        self._export_button = ctk.CTkButton(toolbar_frame, text='Export', width=80, command=self._on_export_clicked)
+        self._export_button.grid(row=0, column=10, padx=(0, 10), pady=10)
 
     def _create_title_entry(self) -> None:
-        """Create the prompt title entry field."""
         title_frame = ctk.CTkFrame(self)
-        title_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 5))
+        title_frame.grid(row=1, column=0, sticky='ew', padx=10, pady=(5, 5))
         title_frame.grid_columnconfigure(1, weight=1)
 
-        title_label = ctk.CTkLabel(title_frame, text="Prompt Title:")
-        title_label.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="w")
-
+        ctk.CTkLabel(title_frame, text='Prompt Title:').grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
         self._title_var = ctk.StringVar()
-        self._title_entry = ctk.CTkEntry(
-            title_frame,
-            textvariable=self._title_var,
-            placeholder_text="Enter prompt title...",
-        )
-        self._title_entry.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ew")
+        self._title_entry = ctk.CTkEntry(title_frame, textvariable=self._title_var, placeholder_text='Enter prompt title...')
+        self._title_entry.grid(row=0, column=1, padx=(0, 10), pady=10, sticky='ew')
 
     def _create_template_editor(self) -> None:
-        """Create the large multiline template editor."""
         editor_frame = ctk.CTkFrame(self)
-        editor_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 5))
+        editor_frame.grid(row=2, column=0, sticky='nsew', padx=10, pady=(5, 5))
         editor_frame.grid_rowconfigure(0, weight=1)
         editor_frame.grid_columnconfigure(0, weight=1)
 
-        editor_label = ctk.CTkLabel(editor_frame, text="Prompt Template Editor:")
-        editor_label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nw")
-
-        self._template_editor = ctk.CTkTextbox(
-            editor_frame,
-            font=ctk.CTkFont(family="Consolas", size=12),
-            wrap="word",
-        )
-        self._template_editor.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        ctk.CTkLabel(editor_frame, text='Prompt Template Editor:').grid(row=0, column=0, padx=10, pady=(10, 0), sticky='nw')
+        self._template_editor = ctk.CTkTextbox(editor_frame, font=ctk.CTkFont(family='Consolas', size=12), wrap='word')
+        self._template_editor.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
 
     def _create_variables_entry(self) -> None:
-        """Create the variables entry field (comma separated)."""
         variables_frame = ctk.CTkFrame(self)
-        variables_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(5, 5))
-        variables_frame.grid_columnconfigure(1, weight=1)
+        variables_frame.grid(row=3, column=0, sticky='nsew', padx=10, pady=(5, 5))
+        variables_frame.grid_columnconfigure(0, weight=1)
+        variables_frame.grid_rowconfigure(1, weight=1)
 
-        variables_label = ctk.CTkLabel(variables_frame, text="Variables (comma separated):")
-        variables_label.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="w")
-
-        self._variables_var = ctk.StringVar()
-        self._variables_var.trace_add("write", lambda *_: self._update_preview())
-        self._variables_entry = ctk.CTkEntry(
+        ctk.CTkLabel(
             variables_frame,
-            textvariable=self._variables_var,
-            placeholder_text="e.g., topic, letter, numbers, subject",
+            text='Variables',
+            font=ctk.CTkFont(size=14, weight='bold'),
+        ).grid(row=0, column=0, padx=10, pady=(10, 5), sticky='w')
+
+        self._variables_container = ctk.CTkScrollableFrame(variables_frame, height=220)
+        self._variables_container.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
+        self._variables_container.grid_columnconfigure(0, weight=1)
+
+    def _clear_variable_fields(self) -> None:
+        self._variable_widgets.clear()
+        self._variable_widget_vars.clear()
+        for child in self._variables_container.winfo_children():
+            child.destroy()
+
+    def _create_variable_widget(
+        self,
+        variable_name: str,
+        definition: Any | None,
+        value: str | None = None,
+    ) -> None:
+        current_value = value if value is not None else ''
+        display_name = (
+            definition.display_name
+            if definition is not None
+            else variable_name.replace('_', ' ').title()
         )
-        self._variables_entry.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ew")
+        control_type = definition.type if definition is not None else 'text'
+        placeholder = definition.placeholder if definition is not None else f'Enter {display_name}'
+        default_value = current_value or (definition.default_value if definition is not None else '')
+        options = definition.options if definition is not None else []
+
+        row = len(self._variable_widgets)
+        if control_type == 'boolean':
+            value_var = ctk.BooleanVar(value=str(default_value).lower() in ('true', '1', 'yes'))
+            widget = ctk.CTkCheckBox(
+                self._variables_container,
+                text=display_name,
+                variable=value_var,
+                command=self._update_preview,
+            )
+            widget.grid(row=row, column=0, padx=10, pady=5, sticky='w', columnspan=2)
+            self._variable_widget_vars[variable_name] = value_var
+        else:
+            ctk.CTkLabel(
+                self._variables_container,
+                text=display_name,
+            ).grid(row=row, column=0, padx=(10, 5), pady=5, sticky='w')
+
+            if control_type == 'dropdown':
+                value_var = ctk.StringVar(value=str(default_value))
+                widget = ctk.CTkComboBox(
+                    self._variables_container,
+                    variable=value_var,
+                    values=options,
+                    state='readonly',
+                    command=lambda *_: self._update_preview(),
+                )
+                widget.set(str(default_value))
+            elif control_type == 'textarea':
+                widget = ctk.CTkTextbox(
+                    self._variables_container,
+                    font=ctk.CTkFont(family='Consolas', size=11),
+                    wrap='word',
+                    height=80,
+                )
+                if default_value:
+                    widget.insert('1.0', str(default_value))
+                widget.bind('<KeyRelease>', lambda event: self._update_preview())
+                value_var = None
+            else:
+                value_var = ctk.StringVar(value=str(default_value))
+                widget = ctk.CTkEntry(
+                    self._variables_container,
+                    textvariable=value_var,
+                    placeholder_text=placeholder,
+                )
+                value_var.trace_add('write', lambda *_: self._update_preview())
+
+            widget.grid(row=row, column=1, padx=(0, 10), pady=5, sticky='ew')
+            self._variable_widget_vars[variable_name] = value_var
+
+        self._variable_widgets[variable_name] = widget
+
+    def _generate_variable_fields(
+        self,
+        variable_names: list[str],
+        current_values: dict[str, str] | None = None,
+    ) -> None:
+        self._clear_variable_fields()
+        current_values = current_values or {}
+        unique_variable_names: list[str] = []
+        for variable_name in variable_names:
+            normalized = variable_name.strip()
+            if normalized and normalized not in unique_variable_names:
+                unique_variable_names.append(normalized)
+
+        for variable_name in unique_variable_names:
+            definition = self._variable_registry.get(variable_name)
+            self._create_variable_widget(variable_name, definition, current_values.get(variable_name))
+
+        for variable_name, value in current_values.items():
+            if variable_name not in self._variable_widgets:
+                self._create_variable_widget(variable_name, None, value)
+
+    def _collect_variable_values(self) -> dict[str, str]:
+        variables: dict[str, str] = {}
+        for variable_name, widget in self._variable_widgets.items():
+            value_var = self._variable_widget_vars.get(variable_name)
+            if value_var is not None:
+                var_value = value_var.get()
+                if isinstance(var_value, bool):
+                    value = 'true' if var_value else 'false'
+                else:
+                    value = str(var_value).strip()
+            elif isinstance(widget, ctk.CTkTextbox):
+                value = widget.get('1.0', 'end-1c').strip()
+            else:
+                value = str(widget.get()).strip()
+
+            if value or value == 'false':
+                variables[variable_name] = value
+        return variables
 
     def _create_live_preview(self) -> None:
-        """Create the live preview textbox (read-only)."""
         preview_frame = ctk.CTkFrame(self)
-        preview_frame.grid(row=4, column=0, sticky="nsew", padx=10, pady=(5, 10))
+        preview_frame.grid(row=4, column=0, sticky='nsew', padx=10, pady=(5, 10))
         preview_frame.grid_rowconfigure(0, weight=1)
         preview_frame.grid_columnconfigure(0, weight=1)
 
-        preview_label = ctk.CTkLabel(preview_frame, text="Live Preview:")
-        preview_label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nw")
-
-        self._preview_textbox = ctk.CTkTextbox(
-            preview_frame,
-            font=ctk.CTkFont(family="Consolas", size=12),
-            wrap="word",
-            state="disabled",  # Read-only
-        )
-        self._preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        ctk.CTkLabel(preview_frame, text='Live Preview:').grid(row=0, column=0, padx=10, pady=(10, 0), sticky='nw')
+        self._preview_textbox = ctk.CTkTextbox(preview_frame, font=ctk.CTkFont(family='Consolas', size=12), wrap='word', state='disabled')
+        self._preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
 
     def _load_categories(self) -> None:
-        """Load categories from PromptService and populate the category dropdown."""
+        """Load categories from TemplateRegistry and populate the category dropdown."""
         try:
-            categories = self._prompt_service.get_categories()
+            categories = self._template_registry.get_categories()
+            self._logger.info('Loaded %d categories', len(categories))
             self._category_dropdown.configure(values=categories)
             if categories:
                 self._category_var.set(categories[0])
-                self._logger.debug("Loaded %d categories", len(categories))
-        except Exception as e:
-            self._logger.error("Failed to load categories: %s", e)
+                self._on_category_changed(categories[0])
+            else:
+                self._logger.warning('No categories available')
+                self._category_dropdown.configure(values=['No categories available'])
+                self._category_dropdown.configure(state='disabled')
+                self._template_dropdown.configure(values=['No templates available'])
+                self._template_dropdown.configure(state='disabled')
+        except Exception as exc:
+            self._logger.error('Failed to load categories: %s', exc)
+            self._category_dropdown.configure(values=['Error loading categories'])
+            self._category_dropdown.configure(state='disabled')
+            self._template_dropdown.configure(values=['Error loading templates'])
+            self._template_dropdown.configure(state='disabled')
 
     def _load_templates(self) -> None:
-        """Load default templates from PromptService and populate the template dropdown."""
+        """Load templates for the currently selected category."""
+        category = self._category_var.get()
+        if not category or category in ('No categories available', 'Error loading categories'):
+            self._template_dropdown.configure(values=['No templates available'])
+            self._template_dropdown.configure(state='disabled')
+            return
+
         try:
-            templates = self._prompt_service.get_default_templates()
-            template_names = list(templates.keys())
+            templates = self._template_registry.get_templates(category)
+            template_names = [t.name for t in templates]
+            self._logger.info('Loaded %d templates for category: %s', len(template_names), category)
             self._template_dropdown.configure(values=template_names)
+            self._template_dropdown.configure(state='readonly')
             if template_names:
                 self._template_var.set(template_names[0])
                 self._on_template_changed(template_names[0])
-            self._logger.debug("Loaded %d default templates", len(templates))
-        except Exception as e:
-            self._logger.error("Failed to load templates: %s", e)
+            else:
+                self._template_var.set('')
+                self._template_editor.delete('1.0', 'end')
+                self._clear_variable_fields()
+                self._update_preview()
+        except Exception as exc:
+            self._logger.error('Failed to load templates for category %s: %s', category, exc)
+            self._template_dropdown.configure(values=['Error loading templates'])
+            self._template_dropdown.configure(state='disabled')
+
+    def _load_saved_prompts(self, selected_prompt_id: str | None = None) -> None:
+        try:
+            prompts = self._prompt_service.list_prompts()
+            self._saved_prompts = list(prompts or [])
+            prompt_titles = [getattr(prompt, 'title', str(prompt)) for prompt in self._saved_prompts]
+            self._saved_prompt_dropdown.configure(values=prompt_titles)
+
+            if selected_prompt_id is not None:
+                for prompt in self._saved_prompts:
+                    if getattr(prompt, 'id', None) == selected_prompt_id:
+                        self._saved_prompt_var.set(getattr(prompt, 'title', ''))
+                        return
+            if self._selected_prompt_id is not None:
+                for prompt in self._saved_prompts:
+                    if getattr(prompt, 'id', None) == self._selected_prompt_id:
+                        self._saved_prompt_var.set(getattr(prompt, 'title', ''))
+                        return
+            self._saved_prompt_var.set('')
+        except (ValueError, FileNotFoundError, Exception) as exc:
+            self._show_error(exc)
 
     def _on_category_changed(self, category: str) -> None:
-        """Handle category dropdown selection change.
-
-        Args:
-            category: The selected category name.
-        """
-        self._logger.debug("Category changed to: %s", category)
-        # Could filter templates by category in the future
+        """Handle category change - reload templates for the new category."""
+        self._logger.debug('Category changed to: %s', category)
+        self._load_templates()
         self._update_preview()
 
     def _on_template_changed(self, template_name: str) -> None:
-        """Handle template dropdown selection change.
+        """Handle template selection - load template from registry and auto-fill form."""
+        self._logger.debug('Template changed to: %s', template_name)
+        category = self._category_var.get()
+        if not category or category in ('No categories available', 'Error loading categories'):
+            return
 
-        Args:
-            template_name: The selected template name.
-        """
-        self._logger.debug("Template changed to: %s", template_name)
         try:
-            templates = self._prompt_service.get_default_templates()
-            if template_name in templates:
-                template_text = templates[template_name]
-                self._template_editor.delete("1.0", "end")
-                self._template_editor.insert("1.0", template_text)
-                self._title_var.set(template_name)
-                # Extract variables from template (simple extraction of {{...}})
-                variables = self._extract_variables(template_text)
-                self._variables_var.set(", ".join(variables))
+            template_def = self._template_registry.get_template(template_name)
+            if template_def is None:
+                self._logger.warning('Template not found: %s', template_name)
+                self._template_editor.delete('1.0', 'end')
+                self._clear_variable_fields()
                 self._update_preview()
-        except Exception as e:
-            self._logger.error("Failed to load template: %s", e)
+                return
+
+            self._logger.info('Selected template: %s', template_name)
+            self._template_editor.delete('1.0', 'end')
+            self._template_editor.insert('1.0', template_def.template)
+            self._title_var.set(template_def.name)
+            variables = self._extract_variables(template_def.template)
+            self._generate_variable_fields(variables)
+            self._update_preview()
+        except Exception as exc:
+            self._logger.error('Failed to load template: %s', exc)
+
+    def _on_saved_prompt_changed(self, prompt_title: str) -> None:
+        if not prompt_title:
+            return
+        for prompt in self._saved_prompts:
+            if getattr(prompt, 'title', None) == prompt_title:
+                self._selected_prompt = prompt
+                self._selected_prompt_id = getattr(prompt, 'id', None)
+                self._populate_form(prompt)
+                return
 
     def _on_new_clicked(self) -> None:
-        """Handle New button click - clear the form for a new prompt."""
-        self._logger.info("New button clicked")
-        self._title_var.set("")
-        self._template_editor.delete("1.0", "end")
-        self._variables_var.set("")
+        self._logger.info('New button clicked')
+        self._selected_prompt = None
+        self._selected_prompt_id = None
+        self._saved_prompt_var.set('')
+        self._title_var.set('')
+        self._category_var.set('')
+        self._template_editor.delete('1.0', 'end')
+        self._clear_variable_fields()
         self._update_preview()
 
     def _on_save_clicked(self) -> None:
-        """Handle Save button click - save prompt and add to history."""
-        self._logger.info("Save button clicked")
-        template = self._template_editor.get("1.0", "end-1c")
-        variables_text = self._variables_var.get()
-        variables = self._parse_variables(variables_text)
-        preview_text = self._prompt_service.render_template(template, variables)
+        self._logger.info('Save button clicked')
+        try:
+            title = self._title_var.get().strip()
+            category = self._category_var.get().strip() or 'general'
+            template = self._template_editor.get('1.0', 'end-1c').strip()
+            variables = self._collect_variable_values()
 
-        if preview_text.strip():
-            title = self._title_var.get() or "Untitled"
-            category = self._category_var.get() or "general"
+            if not title:
+                raise ValueError('Prompt title is required.')
+            if not template:
+                raise ValueError('Prompt template is required.')
+
+            if self._selected_prompt_id is None:
+                prompt = self._prompt_service.create_prompt(title, category, template, variables)
+                self._logger.info('Created prompt: %s', prompt.id)
+                messagebox.showinfo('Success', 'Prompt created successfully.')
+                self._clear_form()
+            else:
+                prompt = self._prompt_service.update_prompt(self._selected_prompt_id, title, category, template, variables)
+                self._logger.info('Updated prompt: %s', prompt.id)
+                messagebox.showinfo('Success', 'Prompt updated successfully.')
+
+            preview_text = self._prompt_service.render_template(template, variables)
             self._prompt_service.add_to_history(preview_text, category, title)
-            self._logger.info("Added prompt to history: %s", title)
-        else:
-            self._logger.warning("No content to save")
+            self._load_saved_prompts(selected_prompt_id=prompt.id)
+            self._selected_prompt = prompt
+            self._selected_prompt_id = getattr(prompt, 'id', None)
+            self._update_preview()
+        except KeyError as exc:
+            self._show_error(FileNotFoundError(str(exc)))
+        except ValueError as exc:
+            self._show_error(exc)
+        except FileNotFoundError as exc:
+            self._show_error(exc)
+        except Exception as exc:
+            self._show_error(exc)
 
     def _on_delete_clicked(self) -> None:
-        """Handle Delete button click - placeholder for future implementation."""
-        self._logger.info("Delete button clicked (not implemented)")
-        # TODO: Implement delete functionality using PromptService
+        self._logger.info('Delete button clicked')
+        try:
+            if self._selected_prompt_id is None:
+                raise ValueError('Select a prompt to delete.')
 
-    def _parse_variables(self, variables_text: str) -> dict[str, str]:
-        """Parse variables from key=value format.
+            prompt = self._selected_prompt or self._find_prompt_by_id(self._selected_prompt_id)
+            title = getattr(prompt, 'title', None) or 'this prompt'
+            if not messagebox.askyesno('Delete prompt', f'Delete prompt \'{title}\'?'):
+                return
 
-        Args:
-            variables_text: Comma-separated key=value pairs (e.g., "animal=Panda,place=Forest").
+            deleted = self._prompt_service.delete_prompt(self._selected_prompt_id)
+            if not deleted:
+                raise FileNotFoundError('Prompt not found.')
 
-        Returns:
-            Dictionary mapping variable names to their values. Invalid entries are ignored.
-        """
-        variables: dict[str, str] = {}
-        if not variables_text.strip():
-            return variables
-
-        for pair in variables_text.split(","):
-            pair = pair.strip()
-            if not pair:
-                continue
-            if "=" not in pair:
-                self._logger.debug("Ignoring invalid variable entry: %s", pair)
-                continue
-            key, value = pair.split("=", 1)
-            key = key.strip()
-            value = value.strip()
-            if key:
-                variables[key] = value
-            else:
-                self._logger.debug("Ignoring variable with empty key: %s", pair)
-
-        return variables
+            self._logger.info('Deleted prompt: %s', self._selected_prompt_id)
+            messagebox.showinfo('Success', 'Prompt deleted successfully.')
+            self._clear_form()
+            self._selected_prompt = None
+            self._selected_prompt_id = None
+            self._load_saved_prompts()
+        except KeyError as exc:
+            self._show_error(FileNotFoundError(str(exc)))
+        except ValueError as exc:
+            self._show_error(exc)
+        except FileNotFoundError as exc:
+            self._show_error(exc)
+        except Exception as exc:
+            self._show_error(exc)
 
     def _extract_variables(self, template_text: str) -> list[str]:
-        """Extract variable names from template text using simple string scanning.
-
-        Args:
-            template_text: Template text containing {{variable}} placeholders.
-
-        Returns:
-            List of variable names found in the template.
-        """
         variables: list[str] = []
         start = 0
         while True:
-            # Find the next {{ pattern
-            open_idx = template_text.find("{{", start)
+            open_idx = template_text.find('{{', start)
             if open_idx == -1:
                 break
-            # Find the closing }} pattern
-            close_idx = template_text.find("}}", open_idx + 2)
+            close_idx = template_text.find('}}', open_idx + 2)
             if close_idx == -1:
                 break
-            # Extract the variable name between {{ and }}
             var_name = template_text[open_idx + 2 : close_idx].strip()
             if var_name and var_name not in variables:
                 variables.append(var_name)
             start = close_idx + 2
         return variables
 
+    def _populate_form(self, prompt: Any) -> None:
+        self._selected_prompt = prompt
+        self._selected_prompt_id = getattr(prompt, 'id', None)
+        self._title_var.set(getattr(prompt, 'title', '') or '')
+        self._category_var.set(getattr(prompt, 'category', '') or '')
+        self._template_editor.delete('1.0', 'end')
+        self._template_editor.insert('1.0', getattr(prompt, 'template', '') or '')
+        self._generate_variable_fields(
+            self._extract_variables(getattr(prompt, 'template', '') or ''),
+            getattr(prompt, 'variables', {}) or {},
+        )
+        self._update_preview()
+
+    def _clear_form(self) -> None:
+        self._selected_prompt = None
+        self._selected_prompt_id = None
+        self._saved_prompt_var.set('')
+        self._title_var.set('')
+        self._category_var.set('')
+        self._template_editor.delete('1.0', 'end')
+        self._clear_variable_fields()
+        self._update_preview()
+
+    def _find_prompt_by_id(self, prompt_id: str | None) -> Any | None:
+        if prompt_id is None:
+            return None
+        for prompt in self._saved_prompts:
+            if getattr(prompt, 'id', None) == prompt_id:
+                return prompt
+        return None
+
     def _update_preview(self) -> None:
-        """Update the live preview with the current template and variables."""
-        template = self._template_editor.get("1.0", "end-1c")
-        variables_text = self._variables_var.get()
-
-        # Parse variables from key=value format
-        variables = self._parse_variables(variables_text)
-
-        # Render template using PromptService
+        template = self._template_editor.get('1.0', 'end-1c')
+        variables = self._collect_variable_values()
         preview_text = self._prompt_service.render_template(template, variables)
 
-        # Update preview textbox
-        self._preview_textbox.configure(state="normal")
-        self._preview_textbox.delete("1.0", "end")
-        self._preview_textbox.insert("1.0", preview_text)
-        self._preview_textbox.configure(state="disabled")
+        self._preview_textbox.configure(state='normal')
+        self._preview_textbox.delete('1.0', 'end')
+        self._preview_textbox.insert('1.0', preview_text)
+        self._preview_textbox.configure(state='disabled')
 
     def on_show(self) -> None:
-        """Called when the page becomes visible."""
         super().on_show()
-        self._logger.info("Prompts page displayed")
+        self._logger.info('Prompts page displayed')
         self._update_preview()
 
     def on_hide(self) -> None:
-        """Called when the page is hidden."""
         super().on_hide()
-        self._logger.info("Prompts page hidden")
+        self._logger.info('Prompts page hidden')
 
     def on_navigate_to(self, **kwargs: Any) -> None:
-        """Called when navigating to this page with optional parameters.
-
-        Args:
-            **kwargs: Optional parameters passed during navigation.
-        """
         super().on_navigate_to(**kwargs)
-        self._logger.debug("Navigated to PromptsPage with params: %s", kwargs)
+        self._logger.debug('Navigated to PromptsPage with params: %s', kwargs)
 
     def _on_export_clicked(self) -> None:
-        """Handle Export button click - save the current preview to a text file."""
-        self._logger.info("Export button clicked")
-
-        self._preview_textbox.configure(state="normal")
+        self._logger.info('Export button clicked')
+        self._preview_textbox.configure(state='normal')
         try:
-            preview_text = self._preview_textbox.get("1.0", "end-1c")
+            preview_text = self._preview_textbox.get('1.0', 'end-1c')
         finally:
-            self._preview_textbox.configure(state="disabled")
+            self._preview_textbox.configure(state='disabled')
 
         if not preview_text.strip():
-            self._logger.warning("No preview content to export")
-            messagebox.showwarning(
-                "Export Prompt",
-                "The current preview is empty. Nothing to export.",
-            )
+            messagebox.showwarning('Export Prompt', 'The current preview is empty. Nothing to export.')
             return
 
         try:
-            file_path = filedialog.asksaveasfilename(
-                initialfile="prompt.txt",
-                defaultextension=".txt",
-                title="Export Prompt",
-            )
+            file_path = filedialog.asksaveasfilename(initialfile='prompt.txt', defaultextension='.txt', title='Export Prompt')
             if not file_path:
-                self._logger.info("Export cancelled by user")
                 return
-
-            with open(file_path, "w", encoding="utf-8") as file_handle:
+            with open(file_path, 'w', encoding='utf-8') as file_handle:
                 file_handle.write(preview_text)
-
-            self._logger.info("Exported prompt to file: %s", file_path)
-            messagebox.showinfo(
-                "Export Prompt",
-                f"Prompt exported successfully to {file_path}",
-            )
+            messagebox.showinfo('Export Prompt', f'Prompt exported successfully to {file_path}')
         except PermissionError as exc:
-            self._logger.error("Permission denied while exporting prompt: %s", exc)
-            messagebox.showerror(
-                "Export Prompt",
-                f"Permission denied while saving the file: {exc}",
-            )
+            messagebox.showerror('Export Prompt', f'Permission denied while saving the file: {exc}')
         except OSError as exc:
-            self._logger.error("Failed to export prompt: %s", exc)
-            messagebox.showerror(
-                "Export Prompt",
-                f"Could not save the file: {exc}",
-            )
+            messagebox.showerror('Export Prompt', f'Could not save the file: {exc}')
 
     def _on_history_clicked(self) -> None:
-        """Handle History button click - open history window."""
-        self._logger.info("History button clicked")
+        self._logger.info('History button clicked')
         history = self._prompt_service.get_history()
         if not history:
-            self._logger.info("History is empty")
-            # Show a simple info dialog
             info_dialog = ctk.CTkToplevel(self)
-            info_dialog.title("Prompt History")
-            info_dialog.geometry("400x200")
+            info_dialog.title('Prompt History')
+            info_dialog.geometry('400x200')
             info_dialog.transient(self)
             info_dialog.grab_set()
-            info_dialog.grid_rowconfigure(0, weight=1)
-            info_dialog.grid_columnconfigure(0, weight=1)
-            label = ctk.CTkLabel(info_dialog, text="No prompt history available yet.\nRender some prompts to see history here.")
-            label.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-            close_btn = ctk.CTkButton(info_dialog, text="Close", command=info_dialog.destroy)
-            close_btn.grid(row=1, column=0, padx=20, pady=(0, 20))
+            ctk.CTkLabel(info_dialog, text='No prompt history available yet.\\nRender some prompts to see history here.').grid(row=0, column=0, padx=20, pady=20, sticky='nsew')
+            ctk.CTkButton(info_dialog, text='Close', command=info_dialog.destroy).grid(row=1, column=0, padx=20, pady=(0, 20))
             return
 
-        # Create history window
         history_window = ctk.CTkToplevel(self)
-        history_window.title("Prompt History")
-        history_window.geometry("700x500")
+        history_window.title('Prompt History')
+        history_window.geometry('700x500')
         history_window.transient(self)
         history_window.grab_set()
         history_window.grid_rowconfigure(1, weight=1)
         history_window.grid_columnconfigure(0, weight=1)
 
-        # Title
-        title_label = ctk.CTkLabel(history_window, text="Prompt History (Newest First)", font=ctk.CTkFont(size=14, weight="bold"))
-        title_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
-
-        # List frame with scrollable list
+        ctk.CTkLabel(history_window, text='Prompt History (Newest First)', font=ctk.CTkFont(size=14, weight='bold')).grid(row=0, column=0, padx=10, pady=(10, 5), sticky='w')
         list_frame = ctk.CTkScrollableFrame(history_window)
-        list_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+        list_frame.grid(row=1, column=0, padx=10, pady=5, sticky='nsew')
         list_frame.grid_columnconfigure(0, weight=1)
 
-        # Preview frame
         preview_frame = ctk.CTkFrame(history_window)
-        preview_frame.grid(row=2, column=0, padx=10, pady=(5, 10), sticky="ew")
+        preview_frame.grid(row=2, column=0, padx=10, pady=(5, 10), sticky='ew')
         preview_frame.grid_columnconfigure(0, weight=1)
         preview_frame.grid_rowconfigure(1, weight=1)
+        ctk.CTkLabel(preview_frame, text='Rendered Prompt:', font=ctk.CTkFont(weight='bold')).grid(row=0, column=0, padx=10, pady=(10, 5), sticky='w')
+        preview_textbox = ctk.CTkTextbox(preview_frame, font=ctk.CTkFont(family='Consolas', size=11), wrap='word', state='disabled', height=150)
+        preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
 
-        preview_label = ctk.CTkLabel(preview_frame, text="Rendered Prompt:", font=ctk.CTkFont(weight="bold"))
-        preview_label.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
-
-        preview_textbox = ctk.CTkTextbox(
-            preview_frame,
-            font=ctk.CTkFont(family="Consolas", size=11),
-            wrap="word",
-            state="disabled",
-            height=150,
-        )
-        preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
-
-        # Populate history list
         for idx, entry in enumerate(history):
-            timestamp = entry["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
-            title = entry["title"]
-            category = entry["category"]
-            rendered_text = entry["rendered_text"]
+            timestamp = entry['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            title = entry['title']
+            category = entry['category']
+            rendered_text = entry['rendered_text']
 
-            # Create a frame for each history item
             item_frame = ctk.CTkFrame(list_frame)
-            item_frame.grid(row=idx, column=0, padx=5, pady=5, sticky="ew")
+            item_frame.grid(row=idx, column=0, padx=5, pady=5, sticky='ew')
             item_frame.grid_columnconfigure(1, weight=1)
+            ctk.CTkLabel(item_frame, text=timestamp, font=ctk.CTkFont(size=11), width=150, anchor='w').grid(row=0, column=0, padx=(10, 5), pady=5, sticky='w')
 
-            # Timestamp
-            time_label = ctk.CTkLabel(item_frame, text=timestamp, font=ctk.CTkFont(size=11), width=150, anchor="w")
-            time_label.grid(row=0, column=0, padx=(10, 5), pady=5, sticky="w")
-
-            # Title and category
-            info_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-            info_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+            info_frame = ctk.CTkFrame(item_frame, fg_color='transparent')
+            info_frame.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
             info_frame.grid_columnconfigure(0, weight=1)
+            ctk.CTkLabel(info_frame, text=title, font=ctk.CTkFont(size=12, weight='bold'), anchor='w').grid(row=0, column=0, sticky='ew')
+            ctk.CTkLabel(info_frame, text=f'Category: {category}', font=ctk.CTkFont(size=10), text_color='gray', anchor='w').grid(row=1, column=0, sticky='ew')
 
-            title_label = ctk.CTkLabel(info_frame, text=title, font=ctk.CTkFont(size=12, weight="bold"), anchor="w")
-            title_label.grid(row=0, column=0, sticky="ew")
-
-            category_label = ctk.CTkLabel(info_frame, text=f"Category: {category}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w")
-            category_label.grid(row=1, column=0, sticky="ew")
-
-            # Make the whole item frame clickable
             def make_click_handler(text=rendered_text):
                 def handler(event=None):
-                    preview_textbox.configure(state="normal")
-                    preview_textbox.delete("1.0", "end")
-                    preview_textbox.insert("1.0", text)
-                    preview_textbox.configure(state="disabled")
+                    preview_textbox.configure(state='normal')
+                    preview_textbox.delete('1.0', 'end')
+                    preview_textbox.insert('1.0', text)
+                    preview_textbox.configure(state='disabled')
                 return handler
 
             handler = make_click_handler()
-            item_frame.bind("<Button-1>", handler)
-            time_label.bind("<Button-1>", handler)
-            info_frame.bind("<Button-1>", handler)
-            title_label.bind("<Button-1>", handler)
-            category_label.bind("<Button-1>", handler)
+            item_frame.bind('<Button-1>', handler)
+            info_frame.bind('<Button-1>', handler)
 
-        # Close button
-        close_btn = ctk.CTkButton(history_window, text="Close", width=100, command=history_window.destroy)
-        close_btn.grid(row=3, column=0, padx=10, pady=(0, 10))
-
-        # Select first item by default
         if history:
             first_entry = history[0]
-            preview_textbox.configure(state="normal")
-            preview_textbox.delete("1.0", "end")
-            preview_textbox.insert("1.0", first_entry["rendered_text"])
-            preview_textbox.configure(state="disabled")
+            preview_textbox.configure(state='normal')
+            preview_textbox.delete('1.0', 'end')
+            preview_textbox.insert('1.0', first_entry['rendered_text'])
+            preview_textbox.configure(state='disabled')
 
     def on_navigate_from(self) -> None:
-        """Called when navigating away from this page."""
         super().on_navigate_from()
-        self._logger.debug("Navigating from PromptsPage")
+        self._logger.debug('Navigating from PromptsPage')
+
+    def _show_error(self, exc: Exception) -> None:
+        messagebox.showerror('Error', str(exc))

@@ -1,0 +1,15 @@
+{
+  "prompts": [
+    {
+      "id": "a2d06f10-8eac-4eed-b632-869c6ea804ca",
+      "title": "ABC Test",
+      "category": "ABC",
+      "template": "Generate a lesson for {{letter}}.",
+      "variables": {
+        "letter": "Apple"
+      },
+      "created_at": "2026-07-24T16:32:45.066627+00:00",
+      "updated_at": "2026-07-24T16:32:45.066642+00:00"
+    }
+  ]
+}

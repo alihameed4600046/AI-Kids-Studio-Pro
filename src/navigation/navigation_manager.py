@@ -35,15 +35,18 @@ class NavigationManager:
         self,
         content_container: ctk.CTkFrame,
         logger: logging.Logger | None = None,
+        shared_dependencies: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize the NavigationManager.
 
         Args:
             content_container: The content container frame from MainWindow.
             logger: Optional logger instance. If None, creates a default logger.
+            shared_dependencies: Shared dependencies to be passed to page instances.
         """
         self._content_container = content_container
         self._logger = logger or get_logger("navigation")
+        self._shared_dependencies = shared_dependencies or {}
 
         # Page registry: page_name -> page_class
         self._page_registry: Dict[str, Type[BasePage]] = {}
@@ -151,10 +154,18 @@ class NavigationManager:
 
         if page_name not in self._page_instances:
             page_class = self._page_registry[page_name]
-            self._page_instances[page_name] = page_class(
-                self._content_container,
-                self,
-            )
+            if page_name == "prompts":
+                self._page_instances[page_name] = page_class(
+                    self._content_container,
+                    self,
+                    variable_registry=self._shared_dependencies["variable_registry"],
+                    template_registry=self._shared_dependencies["template_registry"],
+                )
+            else:
+                self._page_instances[page_name] = page_class(
+                    self._content_container,
+                    self,
+                )
             self._logger.debug("Created page instance: %s", page_name)
 
         return self._page_instances[page_name]
@@ -172,7 +183,7 @@ class NavigationManager:
 
         Returns:
             True if navigation was successful, False if already on that page
-            (duplicate prevention).
+                (duplicate prevention).
 
         Raises:
             KeyError: If page_name is not registered.
