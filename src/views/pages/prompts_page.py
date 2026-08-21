@@ -237,6 +237,7 @@ class PromptsPage(BasePage):
                     textvariable=value_var,
                     placeholder_text=placeholder,
                 )
+                value_var.set(str(default_value))
                 value_var.trace_add('write', lambda *_: self._update_preview())
 
             widget.grid(row=row, column=1, padx=(0, 10), pady=5, sticky='ew')

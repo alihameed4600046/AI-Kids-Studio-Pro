@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from src.prompt.option_library import OptionLibrary, OptionGroup
+from src.prompt.option_library import OptionLibrary, OptionGroup, Option
 
 logger = logging.getLogger(__name__)
 
@@ -101,17 +101,14 @@ class VariableDefinition:
         """Validate and normalize after initialization."""
         # Ensure type is valid
         if self.type not in [t.value for t in VariableType]:
-            object.__setattr__(self, 'type', VariableType.TEXT.value)
-        
-        # Ensure group is valid
+            object.__setattr__(self, 'type', VariableType.TEXT.value),
+            # Ensure group is valid
         if self.group not in [g.value for g in VariableGroup]:
-            object.__setattr__(self, 'group', VariableGroup.CUSTOM.value)
-        
-        # Auto-enable searchable for large option sets
+            object.__setattr__(self, 'group', VariableGroup.CUSTOM.value),
+            # Auto-enable searchable for large option sets
         if self.options and len(self.options) > 20:
-            object.__setattr__(self, 'searchable', True)
-        
-        # Auto-enable searchable if using option library
+            object.__setattr__(self, 'searchable', True),
+            # Auto-enable searchable if using option library
         if self.option_library:
             object.__setattr__(self, 'searchable', True)
 
@@ -216,17 +213,15 @@ class VariableDefinition:
             if self.min_value is not None and len(str_val) < self.min_value:
                 errors.append(f"{self.display_name} must be at least {self.min_value} characters")
             if self.max_value is not None and len(str_val) > self.max_value:
-                errors.append(f"{self.display_name} must be at most {self.max_value} characters")
-        
-        # Regex validation
+                errors.append(f"{self.display_name} must be at most {self.max_value} characters"),
+            # Regex validation
         if self.regex:
             try:
                 if not re.match(self.regex, str(value)):
                     errors.append(self.message or f"{self.display_name} format is invalid")
             except re.error:
-                logger.warning(f"Invalid regex in variable {self.name}: {self.regex}")
-        
-        # Custom validation rules
+                logger.warning(f"Invalid regex in variable {self.name}: {self.regex}"),
+            # Custom validation rules
         for rule in self.validation:
             if rule.rule_type == "custom" and rule.validator:
                 if not rule.validator(value):
@@ -324,9 +319,8 @@ class VariableRegistry:
         """Register all built-in professional variables."""
         builtin_variables = self._create_builtin_variables()
         for variable in builtin_variables:
-            self.register(self._resolve_definition_options(variable))
-
-        # Backward compatibility: ensure legacy variable names exist
+            self.register(self._resolve_definition_options(variable)),
+            # Backward compatibility: ensure legacy variable names exist
         for name in [
             "language",
             "animal",
@@ -402,7 +396,7 @@ class VariableRegistry:
         """Create the complete library of 80-100 professional variables."""
         return [
             # ============================================================
-            # EDUCATION GROUP (50+ variables)
+            # EDUCATION GROUP (50+ variables),
             # ============================================================
             VariableDefinition(
                 name="letter",
@@ -905,7 +899,6 @@ class VariableRegistry:
                 example="Count to 10 with objects",
                 max_value=500,
             ),
-            
             # ============================================================
             # ABC LEARNING - Additional Variables
             # ============================================================
@@ -1067,7 +1060,6 @@ class VariableRegistry:
                 sort_order=42,
                 example="ultra",
             ),
-            
             # ============================================================
             # NUMBERS LEARNING
             # ============================================================
@@ -1151,7 +1143,6 @@ class VariableRegistry:
                 searchable=True,
                 example="medium",
             ),
-            
             # ============================================================
             # COLORS LEARNING
             # ============================================================
@@ -1171,7 +1162,6 @@ class VariableRegistry:
                 searchable=True,
                 example="banana",
             ),
-            
             # ============================================================
             # SHAPES LEARNING
             # ============================================================
@@ -1207,7 +1197,6 @@ class VariableRegistry:
                 searchable=True,
                 example="clock",
             ),
-            
             # ============================================================
             # ANIMALS LEARNING
             # ============================================================
@@ -1259,7 +1248,6 @@ class VariableRegistry:
                 searchable=True,
                 example="bird",
             ),
-            
             # ============================================================
             # BIRDS LEARNING
             # ============================================================
@@ -1343,7 +1331,6 @@ class VariableRegistry:
                 searchable=True,
                 example="hovering",
             ),
-            
             # ============================================================
             # FRUITS LEARNING
             # ============================================================
@@ -1363,7 +1350,6 @@ class VariableRegistry:
                 searchable=True,
                 example="mango",
             ),
-            
             # ============================================================
             # VEGETABLES LEARNING
             # ============================================================
@@ -1399,7 +1385,6 @@ class VariableRegistry:
                 searchable=True,
                 example="garden",
             ),
-            
             # ============================================================
             # VEHICLES LEARNING
             # ============================================================
@@ -1467,7 +1452,6 @@ class VariableRegistry:
                 searchable=True,
                 example="space",
             ),
-            
             # ============================================================
             # BODY PARTS LEARNING
             # ============================================================
@@ -1519,7 +1503,6 @@ class VariableRegistry:
                 searchable=True,
                 example="exercise",
             ),
-            
             # ============================================================
             # MONTHS LEARNING
             # ============================================================
@@ -1571,7 +1554,6 @@ class VariableRegistry:
                 searchable=True,
                 example="play",
             ),
-            
             # ============================================================
             # DAYS LEARNING
             # ============================================================
@@ -1607,7 +1589,6 @@ class VariableRegistry:
                 searchable=True,
                 example="excited",
             ),
-            
             # ============================================================
             # OPPOSITES LEARNING
             # ============================================================
@@ -1627,7 +1608,6 @@ class VariableRegistry:
                 searchable=True,
                 example="hot_cold",
             ),
-            
             # ============================================================
             # PHONICS LEARNING
             # ============================================================
@@ -1647,7 +1627,6 @@ class VariableRegistry:
                 searchable=True,
                 example="b",
             ),
-            
             # ============================================================
             # SPELLING LEARNING
             # ============================================================
@@ -1667,7 +1646,6 @@ class VariableRegistry:
                 searchable=True,
                 example="medium",
             ),
-            
             # ============================================================
             # MATH QUIZ
             # ============================================================
@@ -1703,7 +1681,6 @@ class VariableRegistry:
                 searchable=True,
                 example="hard",
             ),
-            
             # ============================================================
             # SCIENCE QUIZ
             # ============================================================
@@ -1739,7 +1716,6 @@ class VariableRegistry:
                 searchable=True,
                 example="medium",
             ),
-            
             # ============================================================
             # GK QUIZ
             # ============================================================
@@ -1775,9 +1751,296 @@ class VariableRegistry:
                 searchable=True,
                 example="expert",
             ),
-            
             # ============================================================
-            # STORIES GROUP (15+ variables - fully integrated with OptionLibrary)
+            # EDUCATION GENERIC VARIABLES
+            # ============================================================
+            VariableDefinition(
+                name="activity",
+                display_name="Activity",
+                type=VariableType.DROPDOWN.value,
+                default_value="play",
+                option_library="daily_routines",
+                required=False,
+                placeholder="Select activity",
+                description="Typical activity for learning",
+                group=VariableGroup.EDUCATION.value,
+                icon="🎯",
+                tooltip="Learning activity",
+                sort_order=83,
+                searchable=True,
+                example="play",
+            ),
+            VariableDefinition(
+                name="sound",
+                display_name="Sound",
+                type=VariableType.DROPDOWN.value,
+                default_value="a_short",
+                option_library="phonics_sounds",
+                required=False,
+                placeholder="Select sound",
+                description="Letter sound for phonics practice",
+                group=VariableGroup.EDUCATION.value,
+                icon="🔤",
+                tooltip="Letter sound",
+                sort_order=84,
+                searchable=True,
+                example="b",
+            ),
+            VariableDefinition(
+                name="habitat",
+                display_name="Habitat",
+                type=VariableType.DROPDOWN.value,
+                default_value="forest",
+                option_library="habitats",
+                required=False,
+                placeholder="Select habitat",
+                description="Where animals live",
+                group=VariableGroup.EDUCATION.value,
+                icon="🏞️",
+                tooltip="Animal habitat",
+                sort_order=85,
+                searchable=True,
+                example="ocean",
+            ),
+            VariableDefinition(
+                name="object",
+                display_name="Object",
+                type=VariableType.DROPDOWN.value,
+                default_value="apples",
+                option_library="counting_objects",
+                required=False,
+                placeholder="Select object",
+                description="Generic object for learning activities",
+                group=VariableGroup.EDUCATION.value,
+                icon="🍎",
+                tooltip="Object name",
+                sort_order=86,
+                searchable=True,
+                example="apples",
+            ),
+            VariableDefinition(
+                name="age_group",
+                display_name="Age Group",
+                type=VariableType.DROPDOWN.value,
+                default_value="preschool",
+                option_library="age_groups",
+                required=False,
+                placeholder="Select age group",
+                description="Target age group for content",
+                group=VariableGroup.EDUCATION.value,
+                icon="👶",
+                tooltip="Target audience",
+                sort_order=87,
+                searchable=True,
+                example="early_childhood",
+            ),
+            VariableDefinition(
+                name="function",
+                display_name="Function",
+                type=VariableType.DROPDOWN.value,
+                default_value="seeing",
+                option_library="body_functions",
+                required=False,
+                placeholder="Select function",
+                description="What a body part does",
+                group=VariableGroup.EDUCATION.value,
+                icon="🫀",
+                tooltip="Body part function",
+                sort_order=88,
+                searchable=True,
+                example="hearing",
+            ),
+            # ============================================================
+            # EDUCATION GENERIC VARIABLES
+            # ============================================================
+            VariableDefinition(
+                name="example",
+                display_name="Example",
+                type=VariableType.TEXT.value,
+                default_value="A simple example",
+                required=False,
+                placeholder="Enter example",
+                description="Real-world example for learning",
+                group=VariableGroup.EDUCATION.value,
+                icon="💡",
+                tooltip="Learning example",
+                sort_order=89,
+                example="A simple example",
+            ),
+            VariableDefinition(
+                name="moral_lesson",
+                display_name="Moral Lesson",
+                type=VariableType.TEXT.value,
+                default_value="Always be kind and helpful.",
+                required=False,
+                placeholder="Enter moral lesson",
+                description="Moral or lesson of the story",
+                group=VariableGroup.STORIES.value,
+                icon="💖",
+                tooltip="Story moral",
+                sort_order=91,
+                example="Always be kind and helpful.",
+            ),
+            VariableDefinition(
+                name="obstacle",
+                display_name="Obstacle",
+                type=VariableType.TEXT.value,
+                default_value="A difficult challenge",
+                required=False,
+                placeholder="Enter obstacle",
+                description="Challenge or obstacle in the story",
+                group=VariableGroup.STORIES.value,
+                icon="🧩",
+                tooltip="Story obstacle",
+                sort_order=92,
+                example="A difficult challenge",
+            ),
+            VariableDefinition(
+                name="kingdom",
+                display_name="Kingdom",
+                type=VariableType.TEXT.value,
+                default_value="A magical kingdom",
+                required=False,
+                placeholder="Enter kingdom name",
+                description="Name of a kingdom",
+                group=VariableGroup.STORIES.value,
+                icon="🏰",
+                tooltip="Kingdom name",
+                sort_order=93,
+                example="A magical kingdom",
+            ),
+            VariableDefinition(
+                name="location",
+                display_name="Location",
+                type=VariableType.TEXT.value,
+                default_value="A peaceful village",
+                required=False,
+                placeholder="Enter location",
+                description="Story location or setting",
+                group=VariableGroup.STORIES.value,
+                icon="📍",
+                tooltip="Story location",
+                sort_order=94,
+                example="A peaceful village",
+            ),
+            VariableDefinition(
+                name="lesson",
+                display_name="Lesson",
+                type=VariableType.TEXT.value,
+                default_value="An important lesson",
+                required=False,
+                placeholder="Enter lesson",
+                description="Moral or educational lesson",
+                group=VariableGroup.STORIES.value,
+                icon="📖",
+                tooltip="Story lesson",
+                sort_order=95,
+                example="An important lesson",
+            ),
+            VariableDefinition(
+                name="discovery",
+                display_name="Discovery",
+                type=VariableType.TEXT.value,
+                default_value="An amazing discovery",
+                required=False,
+                placeholder="Enter discovery",
+                description="Something discovered in the story",
+                group=VariableGroup.STORIES.value,
+                icon="🔍",
+                tooltip="Story discovery",
+                sort_order=96,
+                example="An amazing discovery",
+            ),
+            VariableDefinition(
+                name="topic",
+                display_name="Topic",
+                type=VariableType.DROPDOWN.value,
+                default_value="math",
+                options=[
+                    "animals",
+                    "birds",
+                    "space",
+                    "weather",
+                    "science",
+                    "math",
+                    "countries",
+                    "flags",
+                    "shapes",
+                    "colors",
+                    "planets",
+                    "transport",
+                    "nature",
+                    "ocean",
+                    "human_body",
+                    "food",
+                    "history",
+                    "technology",
+                    "dinosaurs",
+                    "insects",
+                    "fruits",
+                    "vegetables",
+                    "sports",
+                    "music",
+                    "art",
+                    "community_helpers",
+                    "seasons",
+                    "holidays",
+                    "alphabet",
+                    "numbers",
+                    "phonics",
+                    "reading",
+                    "spelling",
+                    "grammar",
+                    "vocabulary",
+                    "opposites",
+                    "rhyming",
+                    "patterns",
+                    "sorting",
+                    "measurement",
+                    "time",
+                    "money",
+                    "safety",
+                    "manners",
+                    "emotions",
+                    "family",
+                    "school",
+                    "home",
+                ],
+                required=False,
+                placeholder="Select topic",
+                description="Subject or topic for content",
+                group=VariableGroup.EDUCATION.value,
+                icon="📚",
+                tooltip="Content topic",
+                sort_order=97,
+                searchable=True,
+                example="math",
+            ),
+            VariableDefinition(
+                name="ending",
+                display_name="Ending",
+                type=VariableType.DROPDOWN.value,
+                default_value="ending_happy",
+                options=[
+                    "ending_happy",
+                    "ending_emotional",
+                    "ending_funny",
+                    "ending_surprise",
+                    "ending_open",
+                    "ending_inspirational",
+                ],
+                required=False,
+                placeholder="Select ending",
+                description="How the story concludes",
+                group=VariableGroup.STORIES.value,
+                icon="🏁",
+                tooltip="Story ending",
+                sort_order=98,
+                searchable=True,
+                example="ending_happy",
+            ),
+            # ============================================================
+            # STORIES GROUP (15+ variables - fully integrated with OptionLibrary),
             # ============================================================
             VariableDefinition(
                 name="theme",
@@ -2049,7 +2312,6 @@ class VariableRegistry:
                 searchable=True,
                 example="science_fiction",
             ),
-            
             # ============================================================
             # TEXT VARIABLES (NO DROPDOWN) - Keep as text/autocomplete
             # ============================================================
@@ -2066,6 +2328,132 @@ class VariableRegistry:
                 tooltip="Story title",
                 sort_order=18,
                 example="The Dragon Who Loved to Bake",
+            ),
+            VariableDefinition(
+                name="bedtime_title",
+                display_name="Bedtime Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="bedtime_moonlight",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("bedtime_")],
+                required=False,
+                placeholder="Select bedtime story title",
+                description="Title for bedtime stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Bedtime story title",
+                sort_order=19,
+            ),
+            VariableDefinition(
+                name="moral_title",
+                display_name="Moral Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="moral_honest_fox",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("moral_")],
+                required=False,
+                placeholder="Select moral story title",
+                description="Title for moral stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Moral story title",
+                sort_order=20,
+            ),
+            VariableDefinition(
+                name="adventure_title",
+                display_name="Adventure Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="adventure_lost_treasure",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("adventure_")],
+                required=False,
+                placeholder="Select adventure story title",
+                description="Title for adventure stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Adventure story title",
+                sort_order=21,
+            ),
+            VariableDefinition(
+                name="fairy_tale_title",
+                display_name="Fairy Tale Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="fairy_crystal_slipper",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("fairy_")],
+                required=False,
+                placeholder="Select fairy tale title",
+                description="Title for fairy tales",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Fairy tale title",
+                sort_order=22,
+            ),
+            VariableDefinition(
+                name="islamic_title",
+                display_name="Islamic Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="islamic_patient_prophet",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("islamic_")],
+                required=False,
+                placeholder="Select Islamic story title",
+                description="Title for Islamic stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Islamic story title",
+                sort_order=23,
+            ),
+            VariableDefinition(
+                name="jungle_title",
+                display_name="Jungle Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="jungle_monkey_swing",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("jungle_")],
+                required=False,
+                placeholder="Select jungle story title",
+                description="Title for jungle stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Jungle story title",
+                sort_order=24,
+            ),
+            VariableDefinition(
+                name="space_title",
+                display_name="Space Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="space_rocket_mars",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("space_")],
+                required=False,
+                placeholder="Select space story title",
+                description="Title for space stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Space story title",
+                sort_order=25,
+            ),
+            VariableDefinition(
+                name="funny_title",
+                display_name="Funny Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="funny_dance_party",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("funny_")],
+                required=False,
+                placeholder="Select funny story title",
+                description="Title for funny stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Funny story title",
+                sort_order=26,
+            ),
+            VariableDefinition(
+                name="mystery_title",
+                display_name="Mystery Story Title",
+                type=VariableType.DROPDOWN.value,
+                default_value="mystery_missing_key",
+                options=[opt.value for opt in OptionLibrary.STORY_TITLES.options if opt.value.startswith("mystery_")],
+                required=False,
+                placeholder="Select mystery story title",
+                description="Title for mystery stories",
+                group=VariableGroup.STORIES.value,
+                icon="🏷️",
+                tooltip="Mystery story title",
+                sort_order=27,
             ),
             VariableDefinition(
                 name="main_character",
@@ -2210,30 +2598,34 @@ class VariableRegistry:
             VariableDefinition(
                 name="main_animal",
                 display_name="Main Animal",
-                type=VariableType.TEXT.value,
-                default_value="Leo the Lion",
+                type=VariableType.DROPDOWN.value,
+                default_value="lion",
+                option_library="animals",
                 required=False,
-                placeholder="Enter main animal",
+                placeholder="Select main animal",
                 description="Main animal character",
                 group=VariableGroup.STORIES.value,
                 icon="🦁",
                 tooltip="Main animal",
                 sort_order=29,
-                example="Ellie the Elephant",
+                searchable=True,
+                example="elephant",
             ),
             VariableDefinition(
                 name="animal_friend",
                 display_name="Animal Friend",
-                type=VariableType.TEXT.value,
-                default_value="Milo the Monkey",
+                type=VariableType.DROPDOWN.value,
+                default_value="monkey",
+                option_library="animals",
                 required=False,
-                placeholder="Enter animal friend",
+                placeholder="Select animal friend",
                 description="Animal friend character",
                 group=VariableGroup.STORIES.value,
                 icon="🐒",
                 tooltip="Animal friend",
                 sort_order=30,
-                example="Zara the Zebra",
+                searchable=True,
+                example="zebra",
             ),
             VariableDefinition(
                 name="astronaut",
@@ -2305,10 +2697,10 @@ class VariableRegistry:
                 sort_order=35,
                 example="Sergeant Paws",
             ),
-            
             # ============================================================
             # IMAGES GROUP (20 variables)
             # ============================================================
+            
             VariableDefinition(
                 name="art_style",
                 display_name="Art Style",
@@ -2617,9 +3009,8 @@ class VariableRegistry:
                 sort_order=20,
                 example="cinematic, volumetric lighting",
             ),
-            
             # ============================================================
-            # VIDEOS GROUP (12 variables)
+            # VIDEOS GROUP (12 variables),
             # ============================================================
             VariableDefinition(
                 name="duration",
@@ -2805,9 +3196,8 @@ class VariableRegistry:
                 searchable=True,
                 example="early_childhood",
             ),
-            
             # ============================================================
-            # VOICES GROUP (8 variables)
+            # VOICES GROUP (8 variables),
             # ============================================================
             VariableDefinition(
                 name="voice_preset",
@@ -2938,9 +3328,8 @@ class VariableRegistry:
                 max_value=5000,
                 example="Once upon a time...",
             ),
-            
             # ============================================================
-            # YOUTUBE GROUP (10 variables)
+            # YOUTUBE GROUP (10 variables),
             # ============================================================
             VariableDefinition(
                 name="platform",
@@ -3092,9 +3481,8 @@ class VariableRegistry:
                 sort_order=10,
                 example="Fun Math Games",
             ),
-            
             # ============================================================
-            # SOCIAL MEDIA GROUP (8 variables)
+            # SOCIAL MEDIA GROUP (8 variables),
             # ============================================================
             VariableDefinition(
                 name="platform",
@@ -3215,9 +3603,8 @@ class VariableRegistry:
                 sort_order=8,
                 example="entertainment",
             ),
-            
             # ============================================================
-            # PRODUCTIVITY GROUP (8 variables)
+            # PRODUCTIVITY GROUP (8 variables),
             # ============================================================
             VariableDefinition(
                 name="task_name",
@@ -3337,9 +3724,8 @@ class VariableRegistry:
                 max_value=2000,
                 example="Need to review new curriculum standards",
             ),
-            
             # ============================================================
-            # AI ASSISTANT GROUP (8 variables)
+            # AI ASSISTANT GROUP (8 variables),
             # ============================================================
             VariableDefinition(
                 name="ai_model",
@@ -3467,9 +3853,8 @@ class VariableRegistry:
                 sort_order=8,
                 example="json",
             ),
-            
             # ============================================================
-            # CUSTOM GROUP (5 variables for user-defined)
+            # CUSTOM GROUP (5 variables for user-defined),
             # ============================================================
             VariableDefinition(
                 name="custom_1",
@@ -3602,9 +3987,8 @@ class VariableRegistry:
         Returns:
             List of all VariableDefinition objects
         """
-        return list(self._variables.values())
-    
-    # ============================================================
+        return list(self._variables.values()),
+            # ============================================================
     # ENHANCED API
     # ============================================================
     

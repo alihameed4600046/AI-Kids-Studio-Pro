@@ -451,8 +451,8 @@ Include:
                 category="Stories",
                 description="Create a soothing bedtime story for children with calm pacing, gentle imagery, and a reassuring moral tone.",
                 template='''Create a soothing bedtime story for children.
-   
-Title: {{title}}
+    
+Title: {{bedtime_title}}
 Main Character: {{main_character}}
 Companion: {{companion}}
 Setting: {{setting}}
@@ -468,7 +468,7 @@ Animation Style: {{animation_style}}
 Background: {{background}}
 Duration: {{duration}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: craft a calming bedtime narrative that helps children relax and feel safe.
 - Beginning: introduce the main character, companion, and setting with gentle detail.
@@ -481,7 +481,7 @@ Instructions:
 - Rich descriptions: describe sounds, colors, and textures softly.
 - Natural English: use clear, smooth language.
 - AI optimized wording: keep instructions structured and specific.''',
-                variables=["title", "main_character", "companion", "setting", "theme", "story_length", "reading_level", "moral_lesson", "language", "voice", "age_group", "art_style", "animation_style", "background", "duration", "quality"],
+                variables=["bedtime_title", "main_character", "companion", "setting", "theme", "story_length", "reading_level", "moral_lesson", "language", "voice", "age_group", "art_style", "animation_style", "background", "duration", "quality"],
                 version="3.0",
                 difficulty="easy",
                 tags=["bedtime", "calm", "sleep", "story", "children"],
@@ -492,8 +492,8 @@ Instructions:
                 category="Stories",
                 description="Create a thought-provoking moral story for children with clear values and a meaningful ending.",
                 template='''Create a moral story for children.
-   
-Title: {{title}}
+    
+Title: {{moral_title}}
 Main Character: {{main_character}}
 Supporting Character: {{supporting_character}}
 Setting: {{setting}}
@@ -505,7 +505,7 @@ Language: {{language}}
 Voice: {{voice}}
 Age Group: {{age_group}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: deliver a strong moral lesson through a relatable childhood story.
 - Beginning: introduce characters, setting, and the moral dilemma.
@@ -518,7 +518,7 @@ Instructions:
 - Rich descriptions: describe emotions, actions, and setting vividly.
 - Natural English: make the narrative smooth and easy to read.
 - AI optimized wording: keep the prompt structured and purpose-driven.''',
-                variables=["title", "main_character", "supporting_character", "setting", "theme", "moral_lesson", "conflict", "ending_style", "language", "voice", "age_group", "quality"],
+                variables=["moral_title", "main_character", "supporting_character", "setting", "theme", "moral_lesson", "conflict", "ending_style", "language", "voice", "age_group", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["moral", "lesson", "values", "story", "children"],
@@ -529,8 +529,8 @@ Instructions:
                 category="Stories",
                 description="Create an action-packed adventure story for children with an inspiring hero journey and exciting obstacles.",
                 template='''Create an adventure story for children.
-   
-Title: {{title}}
+    
+Title: {{adventure_title}}
 Hero: {{hero}}
 Sidekick: {{sidekick}}
 Villain: {{villain}}
@@ -541,7 +541,7 @@ Reward: {{reward}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: create an exciting hero adventure with clear stakes and progress.
 - Beginning: introduce the hero, sidekick, setting, and mission.
@@ -554,7 +554,7 @@ Instructions:
 - Rich descriptions: describe action scenes, settings, and emotions vividly.
 - Natural English: maintain readability and flow.
 - AI optimized wording: keep the prompt focused and structured.''',
-                variables=["title", "hero", "sidekick", "villain", "mission", "setting", "obstacle", "reward", "language", "voice", "quality"],
+                variables=["adventure_title", "hero", "sidekick", "villain", "mission", "setting", "obstacle", "reward", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["adventure", "hero", "story", "children", "action"],
@@ -565,8 +565,8 @@ Instructions:
                 category="Stories",
                 description="Create a magical fairy tale for children with royal characters, enchanted elements, and a joyful ending.",
                 template='''Create a fairy tale for children.
-   
-Title: {{title}}
+    
+Title: {{fairy_tale_title}}
 Princess: {{princess}}
 Prince: {{prince}}
 Magical Character: {{magical_character}}
@@ -577,7 +577,7 @@ Ending Style: {{ending_style}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: craft a whimsical fairy tale with a magical journey and happy ending.
 - Beginning: introduce the royal characters, kingdom, and enchanted element.
@@ -590,7 +590,7 @@ Instructions:
 - Rich descriptions: portray magical sights, sounds, and settings vividly.
 - Natural English: make the narrative flow smoothly.
 - AI optimized wording: keep the prompt clear and story-driven.''',
-                variables=["title", "princess", "prince", "magical_character", "magical_element", "kingdom", "villain", "ending_style", "language", "voice", "quality"],
+                variables=["fairy_tale_title", "princess", "prince", "magical_character", "magical_element", "kingdom", "villain", "ending_style", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["fairy tale", "magic", "princess", "children", "story"],
@@ -601,8 +601,8 @@ Instructions:
                 category="Stories",
                 description="Create an Islamic story for children that teaches values through a respectful and uplifting narrative.",
                 template='''Create an Islamic story for children.
-   
-Title: {{title}}
+    
+Title: {{islamic_title}}
 Prophet or Personality: {{prophet_or_personality}}
 Islamic Value: {{islamic_value}}
 Location: {{location}}
@@ -611,7 +611,7 @@ Dua: {{dua}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: present an Islamic moral story that is respectful and educational.
 - Beginning: introduce the character, setting, and the value to explore.
@@ -624,7 +624,7 @@ Instructions:
 - Rich descriptions: describe setting, emotions, and actions clearly.
 - Natural English: ensure the story reads smoothly.
 - AI optimized wording: keep the prompt structured and clear.''',
-                variables=["title", "prophet_or_personality", "islamic_value", "location", "lesson", "dua", "language", "voice", "quality"],
+                variables=["islamic_title", "prophet_or_personality", "islamic_value", "location", "lesson", "dua", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["Islamic", "moral", "story", "children", "values"],
@@ -635,8 +635,8 @@ Instructions:
                 category="Stories",
                 description="Create an adventurous jungle story for children with animal friends, nature challenges, and a positive lesson.",
                 template='''Create a jungle story for children.
-   
-Title: {{title}}
+    
+Title: {{jungle_title}}
 Main Animal: {{main_animal}}
 Animal Friend: {{animal_friend}}
 Habitat: {{habitat}}
@@ -646,7 +646,7 @@ Lesson: {{lesson}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: craft an engaging jungle adventure with a meaningful lesson.
 - Beginning: introduce the main animal, friend, and jungle habitat.
@@ -659,7 +659,7 @@ Instructions:
 - Rich descriptions: paint the jungle setting with vivid sensory details.
 - Natural English: make the narrative flow naturally.
 - AI optimized wording: keep the prompt focused and structured.''',
-                variables=["title", "main_animal", "animal_friend", "habitat", "problem", "solution", "lesson", "language", "voice", "quality"],
+                variables=["jungle_title", "main_animal", "animal_friend", "habitat", "problem", "solution", "lesson", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["jungle", "animals", "adventure", "story", "children"],
@@ -670,8 +670,8 @@ Instructions:
                 category="Stories",
                 description="Create a thrilling space story for children with exploration, alien encounters, and inspiring discoveries.",
                 template='''Create a space story for children.
-   
-Title: {{title}}
+    
+Title: {{space_title}}
 Astronaut: {{astronaut}}
 Space Vehicle: {{space_vehicle}}
 Planet: {{planet}}
@@ -681,7 +681,7 @@ Discovery: {{discovery}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: write a space adventure that inspires curiosity and wonder.
 - Beginning: introduce the astronaut, spaceship, and mission.
@@ -694,7 +694,7 @@ Instructions:
 - Rich descriptions: describe planets, space vehicles, and alien worlds vividly.
 - Natural English: ensure the narrative is easy to read.
 - AI optimized wording: keep the prompt concise and structured.''',
-                variables=["title", "astronaut", "space_vehicle", "planet", "alien", "mission", "discovery", "language", "voice", "quality"],
+                variables=["space_title", "astronaut", "space_vehicle", "planet", "alien", "mission", "discovery", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["space", "adventure", "story", "children", "science"],
@@ -705,8 +705,8 @@ Instructions:
                 category="Stories",
                 description="Create a funny story for children with playful characters, humorous situations, and a light-hearted ending.",
                 template='''Create a funny story for children.
-   
-Title: {{title}}
+    
+Title: {{funny_title}}
 Main Character: {{main_character}}
 Funny Friend: {{funny_friend}}
 Funny Situation: {{funny_situation}}
@@ -715,7 +715,7 @@ Ending: {{ending}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: deliver a playful, amusing story with a gentle lesson.
 - Beginning: introduce the characters and the humorous setup.
@@ -728,7 +728,7 @@ Instructions:
 - Rich descriptions: describe funny actions and expressions vividly.
 - Natural English: keep the narrative clear and readable.
 - AI optimized wording: keep the prompt structured and specific.''',
-                variables=["title", "main_character", "funny_friend", "funny_situation", "setting", "ending", "language", "voice", "quality"],
+                variables=["funny_title", "main_character", "funny_friend", "funny_situation", "setting", "ending", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="easy",
                 tags=["funny", "humor", "story", "children", "playful"],
@@ -739,8 +739,8 @@ Instructions:
                 category="Stories",
                 description="Create a suspenseful mystery story for children with clues, investigation, and a clever resolution.",
                 template='''Create a mystery story for children.
-   
-Title: {{title}}
+    
+Title: {{mystery_title}}
 Detective: {{detective}}
 Assistant: {{assistant}}
 Mystery: {{mystery}}
@@ -750,7 +750,7 @@ Ending: {{ending}}
 Language: {{language}}
 Voice: {{voice}}
 Quality: {{quality}}
-   
+    
 Instructions:
 - Story objective: write a child-friendly mystery with clues and resolution.
 - Beginning: introduce the detective, assistant, and mysterious situation.
@@ -763,7 +763,7 @@ Instructions:
 - Rich descriptions: describe settings, clues, and emotions vividly.
 - Natural English: make the story flow naturally.
 - AI optimized wording: keep the prompt focused and structured.''',
-                variables=["title", "detective", "assistant", "mystery", "clues", "setting", "ending", "language", "voice", "quality"],
+                variables=["mystery_title", "detective", "assistant", "mystery", "clues", "setting", "ending", "language", "voice", "quality"],
                 version="3.0",
                 difficulty="medium",
                 tags=["mystery", "detective", "story", "children", "puzzle"],
