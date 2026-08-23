@@ -1,0 +1,18 @@
+================================================================================
+AI KIDS STUDIO PRO - RUNTIME AUDIT REPORT
+================================================================================
+
+SUMMARY
+----------------------------------------
+Total SINGLE findings: 0
+Total EMPTY/MISSING findings: 0
+Total missing VariableDefinitions: 0
+Total invalid defaults: 1
+Total issues: 1
+
+INVALID DEFAULTS
+----------------------------------------
+  AI Assistant/Gemini: multimodal - Boolean field has non-boolean default (default: )
+
+STATUS: FAIL - 1 issues found
+================================================================================

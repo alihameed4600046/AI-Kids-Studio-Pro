@@ -1791,6 +1791,465 @@ class OptionLibrary:
     )
     
     # ============================================================
+    # STORY CHARACTERS & ELEMENTS
+    # ============================================================
+    STORY_MAIN_CHARACTERS = OptionGroup(
+        name="story_main_characters",
+        label="Story Main Characters",
+        description="Kid-friendly main character options",
+        icon="🦸",
+        sort_order=42,
+        options=[
+            Option("luna_the_brave", "Luna the Brave", "A curious and courageous girl", "🌙", sort_order=1),
+            Option("captain_cosmos", "Captain Cosmos", "A space explorer kid", "🚀", sort_order=2),
+            Option("princess_aurora", "Princess Aurora", "A kind and clever princess", "👸", sort_order=3),
+            Option("max_the_dragon", "Max the Dragon", "A friendly young dragon", "🐉", sort_order=4),
+            Option("zara_the_fairy", "Zara the Fairy", "A tiny fairy with big magic", "🧚", sort_order=5),
+            Option("leo_the_lion", "Leo the Lion", "A brave little lion cub", "🦁", sort_order=6),
+            Option("nina_the_mermaid", "Nina the Mermaid", "An ocean-loving mermaid", "🧜", sort_order=7),
+            Option("tommy_robot", "Tommy Robot", "A helpful robot friend", "🤖", sort_order=8),
+            Option("sophie_superhero", "Sophie Superhero", "A hero with a cape", "🦸", sort_order=9),
+            Option("ollie_owl", "Ollie Owl", "A wise little owl", "🦉", sort_order=10),
+            Option("mia_the_explorer", "Mia the Explorer", "An adventurous discoverer", "🧭", sort_order=11),
+            Option("felix_fox", "Felix Fox", "A clever and sneaky fox", "🦊", sort_order=12),
+        ]
+    )
+    
+    STORY_COMPANIONS = OptionGroup(
+        name="story_companions",
+        label="Story Companions",
+        description="Animal and fantasy companion options",
+        icon="🐧",
+        sort_order=43,
+        options=[
+            Option("pip_the_penguin", "Pip the Penguin", "A waddling friend", "🐧", sort_order=1),
+            Option("spark_the_dragon", "Spark the Dragon", "A tiny fire-breather", "🐉", sort_order=2),
+            Option("bella_butterfly", "Bella Butterfly", "A colorful flying buddy", "🦋", sort_order=3),
+            Option("rocky_rabbit", "Rocky Rabbit", "A fast-hopping pal", "🐰", sort_order=4),
+            Option("chatter_squirrel", "Chatter Squirrel", "A nut-loving chatterbox", "🐿️", sort_order=5),
+            Option("waves_dolphin", "Waves Dolphin", "A playful ocean friend", "🐬", sort_order=6),
+            Option("flutter_bird", "Flutter Bird", "A tiny singing bird", "🐦", sort_order=7),
+            Option("cuddles_bear", "Cuddles Bear", "A soft and warm bear", "🐻", sort_order=8),
+            Option("swift_fox", "Swift Fox", "A quick and clever fox", "🦊", sort_order=9),
+            Option("giggles_monkey", "Giggles Monkey", "A silly swinging buddy", "🐒", sort_order=10),
+            Option("stripe_tiger", "Stripe Tiger", "A brave little tiger", "🐅", sort_order=11),
+            Option("pegasus_foal", "Pegasus Foal", "A tiny winged horse", "🦄", sort_order=12),
+        ]
+    )
+    
+    STORY_MORAL_LESSONS = OptionGroup(
+        name="story_moral_lessons",
+        label="Moral Lessons",
+        description="Values and lessons for stories",
+        icon="💖",
+        sort_order=44,
+        options=[
+            Option("always_be_kind", "Always Be Kind", "Kindness wins every time", "💖", sort_order=1),
+            Option("honesty_is_best", "Honesty Is Best", "Truth is always right", "🤍", sort_order=2),
+            Option("help_others", "Help Others", "Lending a hand matters", "🤝", sort_order=3),
+            Option("share_with_friends", "Share With Friends", "Sharing brings joy", "🎁", sort_order=4),
+            Option("be_brave", "Be Brave", "Courage inside you", "💪", sort_order=5),
+            Option("never_give_up", "Never Give Up", "Keep trying always", "🏆", sort_order=6),
+            Option("respect_everyone", "Respect Everyone", "Treat all with care", "🙏", sort_order=7),
+            Option("gratitude_matters", "Gratitude Matters", "Thankful heart is happy", "🙌", sort_order=8),
+        ]
+    )
+    
+    STORY_BACKGROUNDS = OptionGroup(
+        name="story_backgrounds",
+        label="Story Backgrounds",
+        description="Enchanting settings and environments",
+        icon="🌄",
+        sort_order=45,
+        options=[
+            Option("sunset_meadow", "Sunset Meadow", "A field of golden light", "🌅", sort_order=1),
+            Option("enchanted_forest", "Enchanted Forest", "Trees full of magic", "🌲", sort_order=2),
+            Option("starry_night_sky", "Starry Night Sky", "Twinkling stars above", "🌌", sort_order=3),
+            Option("cozy_village", "Cozy Village", "A warm little town", "🏘️", sort_order=4),
+            Option("mountain_top", "Mountain Top", "High above the clouds", "⛰️", sort_order=5),
+            Option("underwater_cave", "Underwater Cave", "Deep blue secrets", "🌊", sort_order=6),
+            Option("cloud_kingdom", "Cloud Kingdom", "A land of soft clouds", "☁️", sort_order=7),
+            Option("candy_land", "Candy Land", "Sweet treats everywhere", "🍭", sort_order=8),
+            Option("jungle_waterfall", "Jungle Waterfall", "Roaring water and green vines", "🌿", sort_order=9),
+            Option("castle_tower", "Castle Tower", "A tall stone fortress", "🏰", sort_order=10),
+            Option("space_station", "Space Station", "Orbiting high above Earth", "🛰️", sort_order=11),
+            Option("secret_garden", "Secret Garden", "A hidden flower paradise", "🌷", sort_order=12),
+        ]
+    )
+    
+    STORY_SUPPORTING_CHARACTERS = OptionGroup(
+        name="story_supporting_characters",
+        label="Supporting Characters",
+        description="Friends and helpers in the story",
+        icon="🐧",
+        sort_order=46,
+        options=[
+            Option("pip_the_penguin", "Pip the Penguin", "A loyal friend", "🐧", sort_order=1),
+            Option("professor_owl", "Professor Owl", "A wise helper", "🦉", sort_order=2),
+            Option("sparky_robot", "Sparky Robot", "A helpful machine", "🤖", sort_order=3),
+            Option("bella_fairy", "Bella Fairy", "A magical guide", "🧚", sort_order=4),
+            Option("rocky_bear", "Rocky Bear", "A strong protector", "🐻", sort_order=5),
+            Option("chatter_squirrel", "Chatter Squirrel", "A quick messenger", "🐿️", sort_order=6),
+            Option("waves_dolphin", "Waves Dolphin", "An ocean guide", "🐬", sort_order=7),
+            Option("felix_fox", "Felix Fox", "A clever trickster", "🦊", sort_order=8),
+            Option("giggles_monkey", "Giggles Monkey", "A funny companion", "🐒", sort_order=9),
+            Option("stripe_tiger", "Stripe Tiger", "A brave ally", "🐅", sort_order=10),
+            Option("pegasus_foal", "Pegasus Foal", "A winged helper", "🦄", sort_order=11),
+            Option("cuddles_bear", "Cuddles Bear", "A soft friend", "🐻", sort_order=12),
+        ]
+    )
+    
+    STORY_HEROES = OptionGroup(
+        name="story_heroes",
+        label="Story Heroes",
+        description="Brave heroes for adventure stories",
+        icon="🦸",
+        sort_order=47,
+        options=[
+            Option("captain_cosmos", "Captain Cosmos", "A space explorer hero", "🚀", sort_order=1),
+            Option("sir_gallant", "Sir Gallant", "A knight of honor", "⚔️", sort_order=2),
+            Option("ninja_nova", "Ninja Nova", "A stealthy hero", "🥷", sort_order=3),
+            Option("super_sam", "Super Sam", "A strong and kind hero", "🦸", sort_order=4),
+            Option("pirate_pete", "Pirate Pete", "A friendly sea captain", "🏴‍☠️", sort_order=5),
+            Option("wizard_will", "Wizard Will", "A young magic user", "🧙", sort_order=6),
+            Option("ranger_rachel", "Ranger Rachel", "A nature protector", "🌿", sort_order=7),
+            Option("inventor_ivan", "Inventor Ivan", "A creative builder", "🔧", sort_order=8),
+            Option("detective_daisy", "Detective Daisy", "A sharp-eyed sleuth", "🕵️", sort_order=9),
+            Option("hero_henry", "Hero Henry", "An everyday hero", "🌟", sort_order=10),
+            Option("knight_lily", "Knight Lily", "A brave young knight", "🛡️", sort_order=11),
+            Option("captain_storm", "Captain Storm", "A daring leader", "⛈️", sort_order=12),
+        ]
+    )
+    
+    STORY_SIDEKICKS = OptionGroup(
+        name="story_sidekicks",
+        label="Story Sidekicks",
+        description="Loyal sidekicks for heroes",
+        icon="🤖",
+        sort_order=48,
+        options=[
+            Option("sparky_robot", "Sparky Robot", "A funny robot buddy", "🤖", sort_order=1),
+            Option("whiskers_cat", "Whiskers Cat", "A sneaky little cat", "🐱", sort_order=2),
+            Option("buzz_bee", "Buzz Bee", "A busy little bee", "🐝", sort_order=3),
+            Option("chirp_bird", "Chirp Bird", "A singing messenger", "🐦", sort_order=4),
+            Option("hoppy_frog", "Hoppy Frog", "A jumpy friend", "🐸", sort_order=5),
+            Option("swift_fox", "Swift Fox", "A fast and sly fox", "🦊", sort_order=6),
+            Option("giggles_monkey", "Giggles Monkey", "A silly sidekick", "🐒", sort_order=7),
+            Option("rocky_turtle", "Rocky Turtle", "A slow but steady friend", "🐢", sort_order=8),
+            Option("daisy_dog", "Daisy Dog", "A loyal puppy", "🐶", sort_order=9),
+            Option("stripe_tiger", "Stripe Tiger", "A fierce little tiger", "🐅", sort_order=10),
+            Option("flutter_butterfly", "Flutter Butterfly", "A tiny magical helper", "🦋", sort_order=11),
+            Option("pegasus_foal", "Pegasus Foal", "A tiny winged horse", "🦄", sort_order=12),
+        ]
+    )
+    
+    STORY_VILLAINS = OptionGroup(
+        name="story_villains",
+        label="Story Villains",
+        description="Not-so-scary villains for kids",
+        icon="👑",
+        sort_order=49,
+        options=[
+            Option("the_shadow_king", "The Shadow King", "A misunderstood ruler", "👑", sort_order=1),
+            Option("dr_chaos", "Dr. Chaos", "A silly mad scientist", "🧪", sort_order=2),
+            Option("grumble_goblin", "Grumble Goblin", "A grumpy but funny goblin", "👺", sort_order=3),
+            Option("wicked_witch", "Wicked Witch", "A spell-casting troublemaker", "🧙‍♀️", sort_order=4),
+            Option("sly_snake", "Sly Snake", "A cunning trickster", "🐍", sort_order=5),
+            Option("foggi_ghost", "Foggi Ghost", "A shy spooky spirit", "👻", sort_order=6),
+            Option("robo_rascal", "Robo Rascal", "A mischievous robot", "🤖", sort_order=7),
+            Option("buzz_fly", "Buzz Fly", "A buzzing nuisance", "🪰", sort_order=8),
+            Option("crabby_captain", "Crabby Captain", "A grumpy sea captain", "🏴‍☠️", sort_order=9),
+            Option("storm_dragon", "Storm Dragon", "A loud but not-so-scary dragon", "🐉", sort_order=10),
+            Option("troll_tremor", "Troll Tremor", "A bridge-dwelling grump", "🧌", sort_order=11),
+            Option("moody_wizard", "Moody Wizard", "A temperamental magic user", "🧙", sort_order=12),
+        ]
+    )
+    
+    STORY_OBSTACLES = OptionGroup(
+        name="story_obstacles",
+        label="Story Obstacles",
+        description="Challenges and obstacles for heroes",
+        icon="🧩",
+        sort_order=50,
+        options=[
+            Option("a_difficult_challenge", "A Difficult Challenge", "Something hard to overcome", "🧩", sort_order=1),
+            Option("dark_forest", "Dark Forest", "A spooky path ahead", "🌲", sort_order=2),
+            Option("raging_river", "Raging River", "Water blocking the way", "🌊", sort_order=3),
+            Option("tall_mountain", "Tall Mountain", "A steep climb needed", "⛰️", sort_order=4),
+            Option("mystery_door", "Mystery Door", "A locked door with no key", "🚪", sort_order=5),
+            Option("lost_map", "Lost Map", "Directions gone missing", "🗺️", sort_order=6),
+            Option("foggy_path", "Foggy Path", "Can't see what's ahead", "🌫️", sort_order=7),
+            Option("broken_bridge", "Broken Bridge", "A gap too wide to jump", "🌉", sort_order=8),
+        ]
+    )
+    
+    STORY_PRINCESSES_PRINCES = OptionGroup(
+        name="story_princesses_princes",
+        label="Princesses and Princes",
+        description="Royal characters for fairy tales",
+        icon="👸",
+        sort_order=51,
+        options=[
+            Option("princess_aurora", "Princess Aurora", "A kind sleeping beauty", "👸", sort_order=1),
+            Option("princess_jasmine", "Princess Jasmine", "A brave desert princess", "👸", sort_order=2),
+            Option("princess_sofia", "Princess Sofia", "A curious young queen", "👸", sort_order=3),
+            Option("princess_ella", "Princess Ella", "A gentle glass slipper girl", "👸", sort_order=4),
+            Option("prince_charming", "Prince Charming", "A gallant prince", "🤴", sort_order=5),
+            Option("prince_eric", "Prince Eric", "A sea-loving prince", "🤴", sort_order=6),
+            Option("prince_philip", "Prince Philip", "A dragon-slaying prince", "🤴", sort_order=7),
+            Option("prince_naveen", "Prince Naveen", "A frog prince with fun", "🤴", sort_order=8),
+            Option("princess_mulan", "Princess Mulan", "A warrior princess", "👸", sort_order=9),
+            Option("princess_tiana", "Princess Tiana", "A hardworking princess", "👸", sort_order=10),
+            Option("prince_aladdin", "Prince Aladdin", "A street-smart prince", "🤴", sort_order=11),
+            Option("princess_rapunzel", "Princess Rapunzel", "A long-haired princess", "👸", sort_order=12),
+        ]
+    )
+    
+    STORY_MAGICAL_CHARACTERS = OptionGroup(
+        name="story_magical_characters",
+        label="Magical Characters",
+        description="Wizards, fairies, and magical beings",
+        icon="🧚",
+        sort_order=52,
+        options=[
+            Option("fairy_godmother", "Fairy Godmother", "A helpful fairy", "🧚", sort_order=1),
+            Option("merlin_wizard", "Merlin Wizard", "An ancient wise wizard", "🧙", sort_order=2),
+            Option("gingerbread_witch", "Gingerbread Witch", "A sweet but tricky witch", "🏚️", sort_order=3),
+            Option("unicorn_guardian", "Unicorn Guardian", "A magical horned horse", "🦄", sort_order=4),
+            Option("dragon_friend", "Dragon Friend", "A tiny fire-breather", "🐉", sort_order=5),
+            Option("magic_mirror", "Magic Mirror", "A truth-telling mirror", "🪞", sort_order=6),
+            Option("wishing_star", "Wishing Star", "A star that grants wishes", "⭐", sort_order=7),
+            Option("flying_carpet", "Flying Carpet", "A magic rug that flies", "🪁", sort_order=8),
+            Option("potion_maker", "Potion Maker", "A brew-mixing alchemist", "⚗️", sort_order=9),
+            Option("spell_book", "Spell Book", "A book of ancient magic", "📕", sort_order=10),
+            Option("crystal_ball", "Crystal Ball", "A seeing orb", "🔮", sort_order=11),
+            Option("magic_beanstalk", "Magic Beanstalk", "A bean that grows to sky", "🌱", sort_order=12),
+        ]
+    )
+    
+    STORY_KINGDOMS = OptionGroup(
+        name="story_kingdoms",
+        label="Kingdoms",
+        description="Magical kingdoms and lands",
+        icon="🏰",
+        sort_order=53,
+        options=[
+            Option("a_magical_kingdom", "A Magical Kingdom", "A land of wonder", "🏰", sort_order=1),
+            Option("enchanted_castle", "Enchanted Castle", "A tower of spells", "🏰", sort_order=2),
+            Option("candy_kingdom", "Candy Kingdom", "A sweet sugary land", "🍭", sort_order=3),
+            Option("underwater_kingdom", "Underwater Kingdom", "A deep blue realm", "🌊", sort_order=4),
+            Option("cloud_kingdom", "Cloud Kingdom", "A fluffy sky land", "☁️", sort_order=5),
+            Option("jungle_kingdom", "Jungle Kingdom", "A wild green empire", "🌿", sort_order=6),
+            Option("space_kingdom", "Space Kingdom", "A star-filled realm", "🌌", sort_order=7),
+            Option("toy_kingdom", "Toy Kingdom", "A land of play", "🧸", sort_order=8),
+        ]
+    )
+    
+    STORY_PROPHETS_PERSONALITIES = OptionGroup(
+        name="story_prophets_personalities",
+        label="Prophets and Personalities",
+        description="Respected Islamic prophets and personalities",
+        icon="🕌",
+        sort_order=54,
+        options=[
+            Option("prophet_muhammad", "Prophet Muhammad (PBUH)", "The final prophet of Islam", "🌙", sort_order=1),
+            Option("prophet_ibrahim", "Prophet Ibrahim (AS)", "The friend of Allah", "🕌", sort_order=2),
+            Option("prophet_musa", "Prophet Musa (AS)", "The leader of Bani Israel", "🌊", sort_order=3),
+            Option("prophet_isa", "Prophet Isa (AS)", "The messenger of peace", "🕊️", sort_order=4),
+            Option("prophet_nuh", "Prophet Nuh (AS)", "The builder of the ark", "⛵", sort_order=5),
+            Option("prophet_yusuf", "Prophet Yusuf (AS)", "The beautiful soul", "🌞", sort_order=6),
+            Option("prophet_dawud", "Prophet Dawud (AS)", "The wise king", "👑", sort_order=7),
+            Option("prophet_sulaiman", "Prophet Sulaiman (AS)", "The king of animals", "🦁", sort_order=8),
+            Option("khadija_ra", "Khadija (RA)", "The first believer", "💎", sort_order=9),
+            Option("aisha_ra", "Aisha (RA)", "The teacher of knowledge", "📚", sort_order=10),
+            Option("ali_ra", "Ali (RA)", "The brave lion of Allah", "⚔️", sort_order=11),
+            Option("bilal_ra", "Bilal (RA)", "The caller of prayer", "📢", sort_order=12),
+        ]
+    )
+    
+    STORY_LOCATIONS = OptionGroup(
+        name="story_locations",
+        label="Story Locations",
+        description="Places and settings for stories",
+        icon="📍",
+        sort_order=55,
+        options=[
+            Option("a_peaceful_village", "A Peaceful Village", "A quiet small town", "🏘️", sort_order=1),
+            Option("bustling_market", "Bustling Market", "A busy trading place", "🏪", sort_order=2),
+            Option("green_valley", "Green Valley", "A lush green land", "🌿", sort_order=3),
+            Option("desert_oasis", "Desert Oasis", "A water haven in sand", "🌴", sort_order=4),
+            Option("snowy_mountain", "Snowy Mountain", "A cold tall peak", "❄️", sort_order=5),
+            Option("beautiful_beach", "Beautiful Beach", "Sand and waves", "🏖️", sort_order=6),
+            Option("old_library", "Old Library", "A room full of books", "📚", sort_order=7),
+            Option("magic_garden", "Magic Garden", "Flowers that talk", "🌷", sort_order=8),
+        ]
+    )
+    
+    STORY_LESSONS = OptionGroup(
+        name="story_lessons",
+        label="Story Lessons",
+        description="Educational lessons for stories",
+        icon="📖",
+        sort_order=56,
+        options=[
+            Option("an_important_lesson", "An Important Lesson", "Something to remember", "📖", sort_order=1),
+            Option("friendship_forever", "Friendship Forever", "Friends last always", "🤝", sort_order=2),
+            Option("courage_counts", "Courage Counts", "Bravery inside you", "💪", sort_order=3),
+            Option("teamwork_wins", "Teamwork Wins", "Together we achieve", "👥", sort_order=4),
+            Option("honesty_best", "Honesty Best", "Truth always matters", "🤍", sort_order=5),
+            Option("share_care", "Share and Care", "Giving brings joy", "🎁", sort_order=6),
+            Option("respect_all", "Respect All", "Treat everyone well", "🙏", sort_order=7),
+            Option("try_again", "Try Again", "Never give up hope", "🏆", sort_order=8),
+        ]
+    )
+    
+    STORY_ASTRONAUTS = OptionGroup(
+        name="story_astronauts",
+        label="Astronauts",
+        description="Space explorer characters",
+        icon="👨‍🚀",
+        sort_order=57,
+        options=[
+            Option("captain_nova", "Captain Nova", "A brave space captain", "🚀", sort_order=1),
+            Option("commander_vega", "Commander Vega", "A skilled pilot", "👨‍🚀", sort_order=2),
+            Option("astro_emma", "Astro Emma", "A curious scientist", "👩‍🚀", sort_order=3),
+            Option("pilot_mars", "Pilot Mars", "A red-planet explorer", "🚀", sort_order=4),
+            Option("luna_astronaut", "Luna Astronaut", "A moonwalker", "👩‍🚀", sort_order=5),
+            Option("rocket_ron", "Rocket Ron", "A speed-loving astronaut", "🚀", sort_order=6),
+            Option("star_sarah", "Star Sarah", "A constellation mapper", "⭐", sort_order=7),
+            Option("orbit_oscar", "Orbit Oscar", "A station builder", "🛰️", sort_order=8),
+            Option("comet_carla", "Comet Carla", "A trail-blazer", "☄️", sort_order=9),
+            Option("galaxy_gabe", "Galaxy Gabe", "A deep-space explorer", "🌌", sort_order=10),
+            Option("nebula_nina", "Nebula Nina", "A cloud walker", "🌌", sort_order=11),
+            Option("zero_zoom", "Zero Zoom", "A zero-gravity ace", "👨‍🚀", sort_order=12),
+        ]
+    )
+    
+    STORY_ALIENS = OptionGroup(
+        name="story_aliens",
+        label="Aliens",
+        description="Friendly alien characters",
+        icon="👽",
+        sort_order=58,
+        options=[
+            Option("zog_friendly_alien", "Zog the Friendly Alien", "A green little buddy", "👽", sort_order=1),
+            Option("glimmer_star_being", "Glimmer Star Being", "A sparkling space friend", "✨", sort_order=2),
+            Option("blip_robot", "Blip Robot", "A mechanical alien", "🤖", sort_order=3),
+            Option("zorba_martian", "Zorba Martian", "A red planet visitor", "👽", sort_order=4),
+            Option("cosmic_casper", "Cosmic Casper", "A friendly space ghost", "👻", sort_order=5),
+            Option("nova_nebula", "Nova Nebula", "A star-born alien", "🌟", sort_order=6),
+            Option("quasar_quinn", "Quasar Quinn", "A bright alien child", "☀️", sort_order=7),
+            Option("meteor_mike", "Meteor Mike", "A fast-flying alien", "☄️", sort_order=8),
+            Option("galaxy_grace", "Galaxy Grace", "A cosmic dancer", "🌌", sort_order=9),
+            Option("orbit_olive", "Orbit Olive", "A tiny green explorer", "🪐", sort_order=10),
+            Option("starlight_sam", "Starlight Sam", "A bright-eyed visitor", "⭐", sort_order=11),
+            Option("comet_carl", "Comet Carl", "A speedy space friend", "☄️", sort_order=12),
+        ]
+    )
+    
+    STORY_DISCOVERIES = OptionGroup(
+        name="story_discoveries",
+        label="Discoveries",
+        description="Amazing things to discover",
+        icon="🔍",
+        sort_order=59,
+        options=[
+            Option("an_amazing_discovery", "An Amazing Discovery", "Something wonderful found", "🔍", sort_order=1),
+            Option("hidden_treasure", "Hidden Treasure", "Gold tucked away", "💰", sort_order=2),
+            Option("secret_garden", "Secret Garden", "A hidden flower paradise", "🌷", sort_order=3),
+            Option("ancient_artifact", "Ancient Artifact", "A relic from long ago", "🏺", sort_order=4),
+            Option("new_planet", "New Planet", "A world no one knew", "🪐", sort_order=5),
+            Option("magic_stone", "Magic Stone", "A gem with power", "💎", sort_order=6),
+            Option("lost_tribe", "Lost Tribe", "A hidden community", "👥", sort_order=7),
+            Option("forgotten_spell", "Forgotten Spell", "Magic remembered again", "📜", sort_order=8),
+        ]
+    )
+    
+    STORY_FUNNY_FRIENDS = OptionGroup(
+        name="story_funny_friends",
+        label="Funny Friends",
+        description="Silly and humorous characters",
+        icon="🐰",
+        sort_order=60,
+        options=[
+            Option("benny_the_bunny", "Benny the Bunny", "A hopping joker", "🐰", sort_order=1),
+            Option("chuckles_chipmunk", "Chuckles Chipmunk", "A nut-cracking comedian", "🐿️", sort_order=2),
+            Option("giggles_gorilla", "Giggles Gorilla", "A laughing big buddy", "🦍", sort_order=3),
+            Option("wacky_walrus", "Wacky Walrus", "A sliding funny friend", "🐬", sort_order=4),
+            Option("silly_sloth", "Silly Sloth", "A slow-motion comedian", "🦥", sort_order=5),
+            Option("punny_penguin", "Punny Penguin", "A joke-telling bird", "🐧", sort_order=6),
+            Option("jokey_jaguar", "Jokey Jaguar", "A spotted prankster", "🐆", sort_order=7),
+            Option("dizzy_donkey", "Dizzy Donkey", "A bouncing buddy", "🫏", sort_order=8),
+            Option("goofy_goat", "Goofy Goat", "A climbing comedian", "🐐", sort_order=9),
+            Option("bubble_frog", "Bubble Frog", "A ribbiting funny friend", "🐸", sort_order=10),
+            Option("zany_zebra", "Zany Zebra", "A striped silly pal", "🦓", sort_order=11),
+            Option("loopy_lemur", "Loopy Lemur", "A tail-swinging buddy", "🐒", sort_order=12),
+        ]
+    )
+    
+    STORY_ENDINGS = OptionGroup(
+        name="story_endings",
+        label="Story Endings",
+        description="How stories can end",
+        icon="🏁",
+        sort_order=61,
+        options=[
+            Option("ending_happy", "Happy Ending", "Everything works out", "😊", sort_order=1),
+            Option("ending_emotional", "Emotional Ending", "A touching conclusion", "🥹", sort_order=2),
+            Option("ending_funny", "Funny Ending", "A humorous wrap-up", "😂", sort_order=3),
+            Option("ending_surprise", "Surprise Ending", "An unexpected twist", "😲", sort_order=4),
+            Option("ending_open", "Open Ending", "Left to imagination", "💭", sort_order=5),
+            Option("ending_inspirational", "Inspirational Ending", "A motivating finish", "🌟", sort_order=6),
+            Option("ending_friendship", "Friendship Ending", "Bonds strengthened", "🤝", sort_order=7),
+            Option("ending_adventure", "Adventure Ending", "A new journey begins", "🗺️", sort_order=8),
+        ]
+    )
+    
+    STORY_DETECTIVES = OptionGroup(
+        name="story_detectives",
+        label="Detectives",
+        description="Kid-friendly detective characters",
+        icon="🕵️",
+        sort_order=62,
+        options=[
+            Option("detective_daisy", "Detective Daisy", "A sharp-eyed sleuth", "🕵️", sort_order=1),
+            Option("inspector_whiskers", "Inspector Whiskers", "A cat detective", "🐱", sort_order=2),
+            Option("sherlock_shorts", "Sherlock Shorts", "A young genius detective", "🧐", sort_order=3),
+            Option("agent_apple", "Agent Apple", "A fruity spy", "🍎", sort_order=4),
+            Option("detective_doodle", "Detective Doodle", "A drawing-solving detective", "✏️", sort_order=5),
+            Option("chief_chip", "Chief Chip", "A squirrel investigator", "🐿️", sort_order=6),
+            Option("mystery_mia", "Mystery Mia", "A puzzle-loving detective", "🔍", sort_order=7),
+            Option("clue_catcher", "Clue Catcher", "A net-wielding sleuth", "🕸️", sort_order=8),
+            Option("private_pepper", "Private Pepper", "A spicy investigator", "🌶️", sort_order=9),
+            Option("gumshoe_gus", "Gumshoe Gus", "A shoe-string detective", "👞", sort_order=10),
+            Option("spy_squirrel", "Spy Squirrel", "A nut-nabbing agent", "🐿️", sort_order=11),
+            Option("sleuth_sam", "Sleuth Sam", "A methodical finder", "🔎", sort_order=12),
+        ]
+    )
+    
+    STORY_ASSISTANTS = OptionGroup(
+        name="story_assistants",
+        label="Detective Assistants",
+        description="Helpers for detective stories",
+        icon="👮",
+        sort_order=63,
+        options=[
+            Option("officer_ollie", "Officer Ollie", "A helpful police helper", "👮", sort_order=1),
+            Option("sergeant_paws", "Sergeant Paws", "A dog deputy", "🐕", sort_order=2),
+            Option("detective_dot", "Detective Dot", "A small but smart helper", "🔘", sort_order=3),
+            Option("agent_arrow", "Agent Arrow", "A sharp-shooting aide", "🏹", sort_order=4),
+            Option("clue_cat", "Clue Cat", "A curious cat assistant", "🐱", sort_order=5),
+            Option("helper_henry", "Helper Henry", "A reliable sidekick", "🤝", sort_order=6),
+            Option("tech_tina", "Tech Tina", "A gadget expert", "💻", sort_order=7),
+            Option("map_mia", "Map Mia", "A direction-finder", "🗺️", sort_order=8),
+            Option("note_ned", "Note Ned", "A writing recorder", "📝", sort_order=9),
+            Option("lens_larry", "Lens Larry", "A photo-taker aide", "📸", sort_order=10),
+            Option("badge_benny", "Badge Benny", "A badge-wearing helper", "🏅", sort_order=11),
+            Option("radio_rita", "Radio Rita", "A communicator operator", "📻", sort_order=12),
+        ]
+    )
+    
+    # ============================================================
     # VIDEO DURATIONS
     # ============================================================
     VIDEO_DURATIONS = OptionGroup(

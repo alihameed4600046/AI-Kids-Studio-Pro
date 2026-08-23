@@ -1,0 +1,872 @@
+stories:
+  fields:
+    story_type:
+      - bedtime
+      - moral
+      - adventure
+      - fairy_tale
+      - islamic
+      - jungle
+      - space
+      - funny
+      - mystery
+      - custom
+    main_character:
+      - luna_the_brave
+      - captain_cosmos
+      - princess_aurora
+      - max_the_dragon
+      - zara_the_fairy
+      - leo_the_lion
+      - nina_the_mermaid
+      - tommy_robot
+      - sophie_superhero
+      - ollie_owl
+      - mia_the_explorer
+      - felix_fox
+    companion:
+      - pip_the_penguin
+      - spark_the_dragon
+      - bella_butterfly
+      - rocky_rabbit
+      - chatter_squirrel
+      - waves_dolphin
+      - flutter_bird
+      - cuddles_bear
+      - swift_fox
+      - giggles_monkey
+      - stripe_tiger
+      - pegasus_foal
+    moral_lesson:
+      - always_be_kind
+      - honesty_is_best
+      - help_others
+      - share_with_friends
+      - be_brave
+      - never_give_up
+      - respect_everyone
+      - gratitude_matters
+    background:
+      - sunset_meadow
+      - enchanted_forest
+      - starry_night_sky
+      - cozy_village
+      - mountain_top
+      - underwater_cave
+      - cloud_kingdom
+      - candy_land
+      - jungle_waterfall
+      - castle_tower
+      - space_station
+      - secret_garden
+    setting:
+      - forest
+      - castle
+      - space
+      - underwater
+      - classroom
+      - playground
+      - kitchen
+      - bedroom
+      - carnival
+      - library
+      - village
+      - mountain
+    theme:
+      - theme_friendship
+      - theme_kindness
+      - theme_bravery
+      - theme_honesty
+      - theme_respect
+      - theme_gratitude
+      - theme_patience
+      - theme_sharing
+      - theme_teamwork
+      - theme_curiosity
+      - theme_creativity
+      - theme_perseverance
+    story_length:
+      - very_short
+      - short
+      - medium
+      - long
+      - very_long
+    reading_level:
+      - pre_reader
+      - beginner
+      - intermediate
+      - advanced
+    supporting_character:
+      - pip_the_penguin
+      - professor_owl
+      - sparky_robot
+      - bella_fairy
+      - rocky_bear
+      - chatter_squirrel
+      - waves_dolphin
+      - felix_fox
+      - giggles_monkey
+      - stripe_tiger
+      - pegasus_foal
+      - cuddles_bear
+    hero:
+      - captain_cosmos
+      - sir_gallant
+      - ninja_nova
+      - super_sam
+      - pirate_pete
+      - wizard_will
+      - ranger_rachel
+      - inventor_ivan
+      - detective_daisy
+      - hero_henry
+      - knight_lily
+      - captain_storm
+    sidekick:
+      - sparky_robot
+      - whiskers_cat
+      - buzz_bee
+      - chirp_bird
+      - hoppy_frog
+      - swift_fox
+      - giggles_monkey
+      - rocky_turtle
+      - daisy_dog
+      - stripe_tiger
+      - flutter_butterfly
+      - pegasus_foal
+    villain:
+      - the_shadow_king
+      - dr_chaos
+      - grumble_goblin
+      - wicked_witch
+      - sly_snake
+      - foggi_ghost
+      - robo_rascal
+      - buzz_fly
+      - crabby_captain
+      - storm_dragon
+      - troll_tremor
+      - moody_wizard
+    obstacle:
+      - a_difficult_challenge
+      - dark_forest
+      - raging_river
+      - tall_mountain
+      - mystery_door
+      - lost_map
+      - foggy_path
+      - broken_bridge
+    princess:
+      - princess_aurora
+      - princess_jasmine
+      - princess_sofia
+      - princess_ella
+      - prince_charming
+      - prince_eric
+      - prince_philip
+      - prince_naveen
+      - princess_mulan
+      - princess_tiana
+      - prince_aladdin
+      - princess_rapunzel
+    prince:
+      - princess_aurora
+      - princess_jasmine
+      - princess_sofia
+      - princess_ella
+      - prince_charming
+      - prince_eric
+      - prince_philip
+      - prince_naveen
+      - princess_mulan
+      - princess_tiana
+      - prince_aladdin
+      - princess_rapunzel
+    magical_character:
+      - fairy_godmother
+      - merlin_wizard
+      - gingerbread_witch
+      - unicorn_guardian
+      - dragon_friend
+      - magic_mirror
+      - wishing_star
+      - flying_carpet
+      - potion_maker
+      - spell_book
+      - crystal_ball
+      - magic_beanstalk
+    kingdom:
+      - a_magical_kingdom
+      - enchanted_castle
+      - candy_kingdom
+      - underwater_kingdom
+      - cloud_kingdom
+      - jungle_kingdom
+      - space_kingdom
+      - toy_kingdom
+    prophet_or_personality:
+      - prophet_muhammad
+      - prophet_ibrahim
+      - prophet_musa
+      - prophet_isa
+      - prophet_nuh
+      - prophet_yusuf
+      - prophet_dawud
+      - prophet_sulaiman
+      - khadija_ra
+      - aisha_ra
+      - ali_ra
+      - bilal_ra
+    location:
+      - a_peaceful_village
+      - bustling_market
+      - green_valley
+      - desert_oasis
+      - snowy_mountain
+      - beautiful_beach
+      - old_library
+      - magic_garden
+    lesson:
+      - an_important_lesson
+      - friendship_forever
+      - courage_counts
+      - teamwork_wins
+      - honesty_best
+      - share_care
+      - respect_all
+      - try_again
+    astronaut:
+      - captain_nova
+      - commander_vega
+      - astro_emma
+      - pilot_mars
+      - luna_astronaut
+      - rocket_ron
+      - star_sarah
+      - orbit_oscar
+      - comet_carla
+      - galaxy_gabe
+      - nebula_nina
+      - zero_zoom
+    alien:
+      - zog_friendly_alien
+      - glimmer_star_being
+      - blip_robot
+      - zorba_martian
+      - cosmic_casper
+      - nova_nebula
+      - quasar_quinn
+      - meteor_mike
+      - galaxy_grace
+      - orbit_olive
+      - starlight_sam
+      - comet_carl
+    discovery:
+      - an_amazing_discovery
+      - hidden_treasure
+      - secret_garden
+      - ancient_artifact
+      - new_planet
+      - magic_stone
+      - lost_tribe
+      - forgotten_spell
+    funny_friend:
+      - benny_the_bunny
+      - chuckles_chipmunk
+      - giggles_gorilla
+      - wacky_walrus
+      - silly_sloth
+      - punny_penguin
+      - jokey_jaguar
+      - dizzy_donkey
+      - goofy_goat
+      - bubble_frog
+      - zany_zebra
+      - loopy_lemur
+    ending:
+      - ending_happy
+      - ending_emotional
+      - ending_funny
+      - ending_surprise
+      - ending_open
+      - ending_inspirational
+      - ending_friendship
+      - ending_adventure
+    detective:
+      - detective_daisy
+      - inspector_whiskers
+      - sherlock_shorts
+      - agent_apple
+      - detective_doodle
+      - chief_chip
+      - mystery_mia
+      - clue_catcher
+      - private_pepper
+      - gumshoe_gus
+      - spy_squirrel
+      - sleuth_sam
+    assistant:
+      - officer_ollie
+      - sergeant_paws
+      - detective_dot
+      - agent_arrow
+      - clue_cat
+      - helper_henry
+      - tech_tina
+      - map_mia
+      - note_ned
+      - lens_larry
+      - badge_benny
+      - radio_rita
+  booleans:
+    has_music: true
+    has_illustrations: true
+  integers:
+    age_range: [3-5, 4-6, 5-7, 6-8, 7-9, 8-10, 9-11, 10-12]
+  category_info: "Create magical and educational stories for kids with customizable characters, settings, and moral lessons across multiple genres."
+
+      - pop_art
+      - fantasy
+      - realistic
+      - anime
+      - comic_book
+      - chalk_art
+      - stained_glass
+      - mosaic
+    image_size:
+      - small
+      - medium
+      - large
+      - square
+      - portrait
+      - landscape
+      - panoramic
+      - thumbnail
+    color_scheme:
+      - bright_rainbow
+      - pastel
+      - monochrome
+      - warm
+      - cool
+      - neon
+      - earth_tones
+      - jewel_tones
+      - primary_colors
+      - seasonal
+    resolution:
+      - low
+      - medium
+      - high
+      - ultra_hd
+      - print_quality
+    mood:
+      - happy
+      - calm
+      - excited
+      - curious
+      - brave
+      - silly
+      - dreamy
+      - magical
+    lighting:
+      - sunny
+      - cloudy
+      - golden_hour
+      - moonlit
+      - studio
+      - candlelight
+    subject_type:
+      - animal
+      - princess
+      - dragon
+      - robot
+      - fairy
+      - superhero
+      - dinosaur
+      - mermaid
+      - wizard
+      - pirate
+    artist_style:
+      - van_gogh
+      - picasso
+      - monet
+      - da_vinci
+      - kandinsky
+      - matisse
+      - miro
+      - seurat
+  booleans:
+    generate_image: true
+  integers:
+    num_images: [1, 2, 3, 4, 5]
+  category_info: "Create colorful and imaginative images for kids with fun styles, friendly characters, and magical scenes."
+
+videos:
+  fields:
+    video_style:
+      - animation
+      - live_action
+      - stop_motion
+      - cartoon
+      - claymation
+      - puppet_show
+      - whiteboard
+      - music_video
+      - documentary
+      - sketch_comedy
+    video_length:
+      - fifteen_seconds
+      - one_minute
+      - three_minutes
+      - five_minutes
+      - ten_minutes
+    animation_type:
+      - 2d_flat
+      - 3d_cgi
+      - hand_drawn
+      - sprite
+      - vector
+      - cutout
+      - stop_motion
+      - motion_graphics
+    music_style:
+      - nursery_rhyme
+      - pop
+      - classical
+      - jazz
+      - rock
+      - electronic
+      - folk
+      - lullaby
+      - marching_band
+      - orchestra
+    mood:
+      - happy
+      - calm
+      - exciting
+      - funny
+      - mysterious
+      - adventurous
+      - cozy
+      - magical
+    scene_type:
+      - forest
+      - castle
+      - space
+      - underwater
+      - classroom
+      - playground
+      - kitchen
+      - bedroom
+      - carnival
+      - library
+    character_style:
+      - chibi
+      - realistic_kid
+      - animal
+      - robot
+      - fantasy
+      - superhero
+      - puppet
+      - clay
+      - cartoon
+      - mascot
+    resolution:
+      - sd
+      - hd
+      - full_hd
+      - 4k
+      - vertical
+  booleans:
+    has_audio: true
+    has_subtitles: false
+  integers:
+    frame_rate: [24, 30, 60, 120]
+  category_info: "Produce fun and engaging videos for children with colorful animation, catchy music, and educational content."
+
+voices:
+  fields:
+    voice_type:
+      - narrator
+      - character
+      - singing
+      - whispering
+      - shouting
+      - robotic
+      - animal
+      - puppet
+      - cartoon
+      - storybook
+    voice_tone:
+      - cheerful
+      - calm
+      - excited
+      - gentle
+      - silly
+      - dramatic
+      - mysterious
+      - warm
+    accent:
+      - american
+      - british
+      - australian
+      - spanish
+      - french
+      - german
+      - indian
+      - japanese
+    speed:
+      - very_slow
+      - slow
+      - normal
+      - fast
+      - very_fast
+    pitch:
+      - very_high
+      - high
+      - medium
+      - low
+      - very_low
+    gender:
+      - male
+      - female
+      - neutral
+    age_group:
+      - child
+      - teenager
+      - adult
+      - senior
+    language:
+      - english
+      - spanish
+      - french
+      - german
+      - mandarin
+      - hindi
+      - arabic
+      - japanese
+      - korean
+      - portuguese
+  booleans:
+    has_effects: true
+  integers:
+    volume: [1, 2, 3, 4, 5]
+  category_info: "Generate friendly and expressive voiceovers for kids' stories, lessons, and characters with various tones and accents."
+
+youtube:
+  fields:
+    video_style:
+      - educational
+      - entertainment
+      - tutorial
+      - vlog
+      - challenge
+      - unboxing
+      - reaction
+      - compilation
+      - interview
+      - storytelling
+    thumbnail_style:
+      - colorful
+      - minimal
+      - text_overlay
+      - face_reaction
+      - cartoon
+      - photo
+      - collage
+      - gradient
+    music_style:
+      - upbeat
+      - chill
+      - classical
+      - electronic
+      - pop
+      - rock
+      - hip_hop
+      - lofi
+      - nursery_rhyme
+      - cinematic
+    target_audience:
+      - toddlers
+      - preschoolers
+      - elementary
+      - preteens
+      - parents
+      - families
+    seo_keywords:
+      - kids_learning
+      - fun_facts
+      - educational_video
+      - children_songs
+      - diy_crafts
+      - science_experiments
+      - bedtime_stories
+      - phonics
+      - math_games
+      - art_for_kids
+    intro_type:
+      - hook_question
+      - song_jingle
+      - quick_teaser
+      - character_greeting
+      - countdown
+      - surprise_reveal
+      - story_opening
+      - animation_skit
+    outro_type:
+      - call_to_action
+      - recap_summary
+      - song_outro
+      - preview_next
+      - credits_roll
+      - quiz_time
+      - character_signoff
+      - bloopers
+  booleans:
+    has_end_screen: true
+  integers:
+    video_duration: [one_to_two_min, two_to_five_min, five_to_ten_min, ten_to_twenty_min, twenty_plus_min]
+  category_info: "Create engaging YouTube content for kids including educational videos, fun challenges, songs, and storytelling series."
+
+social_media:
+  fields:
+    post_style:
+      - educational
+      - funny
+      - inspirational
+      - promotional
+      - interactive
+      - behind_scenes
+      - user_generated
+      - tutorial
+      - announcement
+      - celebration
+    platform:
+      - instagram
+      - facebook
+      - tiktok
+      - twitter
+      - pinterest
+      - youtube
+      - snapchat
+      - threads
+      - linkedin
+      - tumblr
+    emoji_style:
+      - minimal
+      - expressive
+      - themed
+      - animated
+      - seasonal
+      - custom
+      - gradient
+      - glitter
+    hashtags:
+      - kidsactivities
+      - learningfun
+      - parenting
+      - education
+      - creativity
+      - diy
+      - homeschool
+      - toddlerlife
+      - preschool
+      - elementary
+      - funlearning
+      - kidsart
+      - scienceforkids
+      - readingtime
+      - playtime
+    tone:
+      - friendly
+      - professional
+      - playful
+      - educational
+      - inspiring
+      - humorous
+      - calming
+      - exciting
+    call_to_action:
+      - comment_below
+      - subscribe
+      - follow_us
+      - share_post
+      - swipe_up
+      - click_link
+    content_type:
+      - image
+      - video
+      - carousel
+      - story
+      - reel
+      - live_stream
+      - poll
+      - text_post
+    audience_engagement:
+      - questions
+      - polls
+      - contests
+      - challenges
+      - duets
+      - replies
+  booleans:
+    has_mention: true
+    has_location: false
+  integers:
+    post_frequency: [daily, weekly, biweekly, monthly, occasional]
+  category_info: "Design social media content for family-friendly platforms with engaging posts, fun hashtags, and interactive elements for kids and parents."
+
+productivity:
+  fields:
+    task_type:
+      - homework
+      - project
+      - reading
+      - writing
+      - math_practice
+      - science_experiment
+      - art_project
+      - music_practice
+      - chore
+      - goal_setting
+    pomodoro_length:
+      - ten_minutes
+      - fifteen_minutes
+      - twenty_minutes
+      - twenty_five_minutes
+      - thirty_minutes
+    break_length:
+      - one_minute
+      - three_minutes
+      - five_minutes
+      - ten_minutes
+      - fifteen_minutes
+    music_style:
+      - classical
+      - lofi
+      - nature_sounds
+      - white_noise
+      - instrumental
+      - ambient
+      - binaural
+      - jazz
+    motivation_type:
+      - stickers
+      - points
+      - badges
+      - praise
+      - rewards
+      - progress_chart
+      - celebration
+      - encouragement
+      - gamification
+      - teamwork
+    tool_suggestions:
+      - planner
+      - checklist
+      - timer
+      - notebook
+      - whiteboard
+      - calendar
+      - app
+      - flashcards
+      - mind_map
+      - sticky_notes
+    workspace_style:
+      - desk
+      - table
+      - floor
+      - outdoor
+      - library
+      - cozy_corner
+    goal_type:
+      - daily
+      - weekly
+      - monthly
+      - semester
+      - personal_best
+      - team_goal
+  booleans:
+    has_timer: true
+    has_notes: true
+    has_reminders: false
+  integers:
+    collaboration_level: [individual, paired, small_group, large_group]
+  category_info: "Help kids stay organized and focused with fun productivity tools, timers, reward systems, and goal tracking for school and home."
+
+ai_assistant:
+  fields:
+    assistant_role:
+      - tutor
+      - coach
+      - friend
+      - entertainer
+      - storyteller
+      - artist
+      - scientist
+      - explorer
+      - chef
+      - musician
+    personality:
+      - friendly
+      - patient
+      - enthusiastic
+      - curious
+      - silly
+      - wise
+      - encouraging
+      - playful
+    expertise:
+      - math
+      - science
+      - reading
+      - art
+      - music
+      - history
+      - geography
+      - coding
+      - languages
+      - general_knowledge
+    tone:
+      - casual
+      - formal
+      - enthusiastic
+      - calm
+      - humorous
+      - supportive
+    interaction_style:
+      - question_answer
+      - guided_discovery
+      - step_by_step
+      - open_ended
+      - game_based
+      - storytelling
+    learning_level:
+      - beginner
+      - intermediate
+      - advanced
+      - mixed
+      - adaptive
+      - review
+    response_style:
+      - concise
+      - detailed
+      - visual
+      - auditory
+      - kinesthetic
+      - multimodal
+    engagement_type:
+      - quiz
+      - challenge
+      - discussion
+      - project
+      - experiment
+      - exploration
+  booleans:
+    has_voice: true
+    has_visuals: true
+    has_examples: true
+  integers:
+    feedback_style: [immediate, delayed, positive_only, corrective, encouraging]
+  category_info: "Provide personalized AI-powered learning assistance with adaptive tutoring, creative exploration, and interactive educational experiences for kids."
