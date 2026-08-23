@@ -15,6 +15,7 @@ from tkinter import filedialog, messagebox
 from src.prompt.prompt_service import PromptService
 from src.prompt.template_registry import TemplateRegistry, TemplateDefinition
 from src.prompt.variable_registry import VariableRegistry
+from src.prompt.option_library import OptionLibrary
 from src.views.pages.base_page import BasePage
 
 if TYPE_CHECKING:
@@ -44,6 +45,7 @@ class PromptsPage(BasePage):
         if variable_registry is None:
             raise RuntimeError("VariableRegistry dependency was not injected into PromptsPage.")
         self._variable_registry = variable_registry
+        self._option_library = OptionLibrary()
         self._variable_widgets: dict[str, Any] = {}
         self._variable_widget_vars: dict[str, Any] = {}
         self._logger = logging.getLogger(f'page.{self.__class__.__name__}')
@@ -175,6 +177,18 @@ class PromptsPage(BasePage):
         for child in self._variables_container.winfo_children():
             child.destroy()
 
+    def _resolve_options(self, definition: Any) -> list[str]:
+        if definition is None:
+            return []
+        if definition.options:
+            return list(definition.options)
+        option_library_name = getattr(definition, 'option_library', None) or ''
+        if option_library_name:
+            lib_group = getattr(self._option_library, option_library_name.upper(), None)
+            if lib_group and hasattr(lib_group, 'options'):
+                return [opt.value for opt in getattr(lib_group, 'options', [])]
+        return []
+
     def _create_variable_widget(
         self,
         variable_name: str,
@@ -190,7 +204,7 @@ class PromptsPage(BasePage):
         control_type = definition.type if definition is not None else 'text'
         placeholder = definition.placeholder if definition is not None else f'Enter {display_name}'
         default_value = current_value or (definition.default_value if definition is not None else '')
-        options = definition.options if definition is not None else []
+        options = self._resolve_options(definition)
 
         row = len(self._variable_widgets)
         if control_type == 'boolean':
