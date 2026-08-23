@@ -326,6 +326,9 @@ stories:
     age_range: [3-5, 4-6, 5-7, 6-8, 7-9, 8-10, 9-11, 10-12]
   category_info: "Create magical and educational stories for kids with customizable characters, settings, and moral lessons across multiple genres."
 
+images:
+  fields:
+    image_style:
       - pop_art
       - fantasy
       - realistic
@@ -360,6 +363,9 @@ stories:
       - high
       - ultra_hd
       - print_quality
+      - square
+      - portrait
+      - landscape
     mood:
       - happy
       - calm
@@ -376,6 +382,8 @@ stories:
       - moonlit
       - studio
       - candlelight
+      - neon
+      - rainbow
     subject_type:
       - animal
       - princess
@@ -421,6 +429,9 @@ videos:
       - three_minutes
       - five_minutes
       - ten_minutes
+      - fifteen_minutes
+      - thirty_minutes
+      - one_hour
     animation_type:
       - 2d_flat
       - 3d_cgi
@@ -478,6 +489,9 @@ videos:
       - full_hd
       - 4k
       - vertical
+      - square
+      - panoramic
+      - cinematic
   booleans:
     has_audio: true
     has_subtitles: false
@@ -522,21 +536,36 @@ voices:
       - normal
       - fast
       - very_fast
+      - pace_slow
+      - pace_medium
+      - pace_fast
     pitch:
       - very_high
       - high
       - medium
       - low
       - very_low
-    gender:
+      - deep
+      - soft
+      - sharp
+    voice_gender:
       - male
       - female
       - neutral
+      - boy
+      - girl
+      - man
+      - woman
+      - child
     age_group:
       - child
       - teenager
       - adult
       - senior
+      - toddler
+      - preschooler
+      - elementary
+      - preteen
     language:
       - english
       - spanish
@@ -594,6 +623,8 @@ youtube:
       - preteens
       - parents
       - families
+      - teachers
+      - homeschool
     seo_keywords:
       - kids_learning
       - fun_facts
@@ -694,6 +725,8 @@ social_media:
       - share_post
       - swipe_up
       - click_link
+      - save_post
+      - tag_friend
     content_type:
       - image
       - video
@@ -710,6 +743,8 @@ social_media:
       - challenges
       - duets
       - replies
+      - shares
+      - saves
   booleans:
     has_mention: true
     has_location: false
@@ -736,12 +771,18 @@ productivity:
       - twenty_minutes
       - twenty_five_minutes
       - thirty_minutes
+      - five_minutes
+      - forty_five_minutes
+      - one_hour
     break_length:
       - one_minute
       - three_minutes
       - five_minutes
       - ten_minutes
       - fifteen_minutes
+      - two_minutes
+      - four_minutes
+      - twenty_minutes
     music_style:
       - classical
       - lofi
@@ -780,6 +821,8 @@ productivity:
       - outdoor
       - library
       - cozy_corner
+      - standing
+      - couch
     goal_type:
       - daily
       - weekly
@@ -787,6 +830,8 @@ productivity:
       - semester
       - personal_best
       - team_goal
+      - project
+      - habit
   booleans:
     has_timer: true
     has_notes: true
@@ -835,6 +880,8 @@ ai_assistant:
       - calm
       - humorous
       - supportive
+      - friendly
+      - encouraging
     interaction_style:
       - question_answer
       - guided_discovery
@@ -842,6 +889,8 @@ ai_assistant:
       - open_ended
       - game_based
       - storytelling
+      - discussion
+      - exploration
     learning_level:
       - beginner
       - intermediate
@@ -849,6 +898,8 @@ ai_assistant:
       - mixed
       - adaptive
       - review
+      - refresher
+      - extension
     response_style:
       - concise
       - detailed
@@ -856,6 +907,8 @@ ai_assistant:
       - auditory
       - kinesthetic
       - multimodal
+      - interactive
+      - creative
     engagement_type:
       - quiz
       - challenge
@@ -863,6 +916,8 @@ ai_assistant:
       - project
       - experiment
       - exploration
+      - game
+      - puzzle
   booleans:
     has_voice: true
     has_visuals: true

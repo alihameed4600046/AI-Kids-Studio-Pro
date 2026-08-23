@@ -819,6 +819,8 @@ class OptionLibrary:
             Option("ultra", "Ultra", "Maximum detail", "⭐⭐", sort_order=4),
             Option("4k", "4K", "3840x2160 resolution", "🖥️", sort_order=5),
             Option("8k", "8K", "7680x4320 resolution", "🖥️🖥️", sort_order=6),
+            Option("print_ready", "Print Ready", "300 DPI output", "🖨️", sort_order=7),
+            Option("web_optimized", "Web Optimized", "Fast loading, good quality", "🌐", sort_order=8),
         ]
     )
     
