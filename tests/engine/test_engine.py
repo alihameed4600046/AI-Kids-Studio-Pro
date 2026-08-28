@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 
 import pytest
 
@@ -48,6 +49,46 @@ class TestPromptEngine:
         engine.set_variables({"name": "Alice"})
         engine.clear_variables()
         assert len(engine.variables) == 0
+
+    def test_load_yaml_mapping_template(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        template_file = tmp_path / "greeting.yaml"
+        template_file.write_text('prompt: "Hello {{name}}!"', encoding="utf-8")
+        result = engine.load_template("greeting")
+        assert result == '"Hello {{name}}!"'
+
+    def test_load_plain_text_template(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        template_file = tmp_path / "plain.yaml"
+        template_file.write_text("Hello {{name}}!", encoding="utf-8")
+        result = engine.load_template("plain")
+        assert result == "Hello {{name}}!"
+
+    def test_load_missing_template_raises(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        with pytest.raises(PromptTemplateError, match="Template not found"):
+            engine.load_template("nonexistent")
+
+    def test_load_malformed_yaml_raises(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        template_file = tmp_path / "bad.yaml"
+        template_file.write_text("prompt: Hello {{name}}!\nThis line has no colon", encoding="utf-8")
+        with pytest.raises(PromptTemplateError, match="Failed to parse template"):
+            engine.load_template("bad")
+
+    def test_render_substitutes_variables(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        template_file = tmp_path / "greeting.yaml"
+        template_file.write_text('prompt: "Hello {{name}}!"', encoding="utf-8")
+        result = engine.render("greeting", {"name": "Alice"})
+        assert result == '"Hello Alice!"'
+
+    def test_build_request_uses_rendered_prompt(self, tmp_path: Path) -> None:
+        engine = PromptEngine(prompts_dir=tmp_path)
+        template_file = tmp_path / "greeting.yaml"
+        template_file.write_text('prompt: "Hello {{name}}!"', encoding="utf-8")
+        request = engine.build_request("greeting", {"name": "Alice"})
+        assert request.prompt == '"Hello Alice!"'
 
 
 class TestMockEngine:

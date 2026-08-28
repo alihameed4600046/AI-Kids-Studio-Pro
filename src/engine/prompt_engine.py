@@ -27,6 +27,22 @@ class PromptTemplateError(Exception):
     pass
 
 
+def _looks_like_plain_text(text: str) -> bool:
+    """Return True if *text* appears to be plain text rather than YAML.
+
+    A file is treated as plain text when every non-empty, non-comment line
+    lacks a ``:`` separator.  This intentionally avoids silently accepting
+    malformed structured YAML.
+    """
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if ":" in stripped:
+            return False
+    return True
+
+
 class PromptEngine:
     """Engine for loading and processing prompt templates.
 
@@ -77,17 +93,27 @@ class PromptEngine:
 
         try:
             with open(template_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-                if isinstance(data, dict) and "prompt" in data:
-                    self.templates[name] = data["prompt"]
-                elif isinstance(data, str):
-                    self.templates[name] = data
-                else:
-                    raise PromptTemplateError(f"Invalid template format in {template_path}")
-        except yaml.YAMLError as exc:
-            raise PromptTemplateError(f"Failed to parse YAML template {name}: {exc}") from exc
+                raw = f.read()
         except OSError as exc:
             raise PromptTemplateError(f"Failed to read template {name}: {exc}") from exc
+
+        try:
+            data = yaml.safe_load(raw)
+            if isinstance(data, dict) and "prompt" in data:
+                self.templates[name] = data["prompt"]
+            elif isinstance(data, str):
+                self.templates[name] = data
+            else:
+                raise PromptTemplateError(f"Invalid template format in {template_path}")
+        except PromptTemplateError:
+            raise
+        except Exception as exc:
+            if _looks_like_plain_text(raw):
+                self.templates[name] = raw.strip()
+            else:
+                raise PromptTemplateError(
+                    f"Failed to parse template {name}: {exc}"
+                ) from exc
 
         logger.debug("Loaded template: %s", name)
         return self.templates[name]
