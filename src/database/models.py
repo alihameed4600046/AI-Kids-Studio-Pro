@@ -64,3 +64,19 @@ class Video:
     file_path: str
     duration: float
     created_at: datetime
+
+
+@dataclass
+class Generation:
+    id: str
+    category: str
+    template_name: str
+    variables: str
+    media_types: str
+    status: str
+    result: Optional[str]
+    error: Optional[str]
+    created_at: datetime
+    completed_at: Optional[datetime]
+    duration_ms: Optional[float]
+    metadata: Optional[str]

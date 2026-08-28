@@ -6,7 +6,9 @@ with a live preview panel.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 from typing import Any, TYPE_CHECKING
 
 import customtkinter as ctk
@@ -16,6 +18,7 @@ from src.prompt.prompt_service import PromptService
 from src.prompt.template_registry import TemplateRegistry, TemplateDefinition
 from src.prompt.variable_registry import VariableRegistry
 from src.prompt.option_library import OptionLibrary
+from src.services.generation_service import GenerationService, MediaType
 from src.views.pages.base_page import BasePage
 
 if TYPE_CHECKING:
@@ -35,6 +38,7 @@ class PromptsPage(BasePage):
         prompt_service: PromptService | None = None,
         template_registry: TemplateRegistry | None = None,
         variable_registry: VariableRegistry | None = None,
+        generation_service: GenerationService | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(master, navigation_manager, **kwargs)
@@ -48,16 +52,19 @@ class PromptsPage(BasePage):
         self._option_library = OptionLibrary()
         self._variable_widgets: dict[str, Any] = {}
         self._variable_widget_vars: dict[str, Any] = {}
+        self._generation_service = generation_service or GenerationService()
         self._logger = logging.getLogger(f'page.{self.__class__.__name__}')
         self._selected_prompt_id: str | None = None
         self._selected_prompt: Any | None = None
         self._saved_prompts: list[Any] = []
+        self._generation_thread: threading.Thread | None = None
 
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
         self.grid_rowconfigure(2, weight=1)
         self.grid_rowconfigure(3, weight=0)
         self.grid_rowconfigure(4, weight=1)
+        self.grid_rowconfigure(5, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         self._create_toolbar()
@@ -65,6 +72,7 @@ class PromptsPage(BasePage):
         self._create_template_editor()
         self._create_variables_entry()
         self._create_live_preview()
+        self._create_result_display()
 
         self._load_categories()
         self._load_templates()
@@ -86,6 +94,7 @@ class PromptsPage(BasePage):
         toolbar_frame.grid_columnconfigure(8, weight=0)
         toolbar_frame.grid_columnconfigure(9, weight=0)
         toolbar_frame.grid_columnconfigure(10, weight=0)
+        toolbar_frame.grid_columnconfigure(11, weight=0)
 
         ctk.CTkLabel(toolbar_frame, text='Category:').grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
         self._category_var = ctk.StringVar()
@@ -134,6 +143,9 @@ class PromptsPage(BasePage):
 
         self._export_button = ctk.CTkButton(toolbar_frame, text='Export', width=80, command=self._on_export_clicked)
         self._export_button.grid(row=0, column=10, padx=(0, 10), pady=10)
+
+        self._generate_button = ctk.CTkButton(toolbar_frame, text='Generate', width=100, command=self._on_generate_clicked)
+        self._generate_button.grid(row=0, column=11, padx=(0, 10), pady=10)
 
     def _create_title_entry(self) -> None:
         title_frame = ctk.CTkFrame(self)
@@ -301,13 +313,23 @@ class PromptsPage(BasePage):
 
     def _create_live_preview(self) -> None:
         preview_frame = ctk.CTkFrame(self)
-        preview_frame.grid(row=4, column=0, sticky='nsew', padx=10, pady=(5, 10))
-        preview_frame.grid_rowconfigure(0, weight=1)
+        preview_frame.grid(row=4, column=0, sticky='nsew', padx=10, pady=(5, 5))
+        preview_frame.grid_rowconfigure(1, weight=1)
         preview_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(preview_frame, text='Live Preview:').grid(row=0, column=0, padx=10, pady=(10, 0), sticky='nw')
         self._preview_textbox = ctk.CTkTextbox(preview_frame, font=ctk.CTkFont(family='Consolas', size=12), wrap='word', state='disabled')
         self._preview_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
+
+    def _create_result_display(self) -> None:
+        result_frame = ctk.CTkFrame(self)
+        result_frame.grid(row=5, column=0, sticky='nsew', padx=10, pady=(5, 10))
+        result_frame.grid_rowconfigure(1, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(result_frame, text='Generated Output:').grid(row=0, column=0, padx=10, pady=(10, 0), sticky='nw')
+        self._result_textbox = ctk.CTkTextbox(result_frame, font=ctk.CTkFont(family='Consolas', size=12), wrap='word', state='disabled')
+        self._result_textbox.grid(row=1, column=0, padx=10, pady=(0, 10), sticky='nsew')
 
     def _load_categories(self) -> None:
         """Load categories from TemplateRegistry and populate the category dropdown."""
@@ -667,6 +689,106 @@ class PromptsPage(BasePage):
     def on_navigate_from(self) -> None:
         super().on_navigate_from()
         self._logger.debug('Navigating from PromptsPage')
+
+    def _on_generate_clicked(self) -> None:
+        """Handle generate button click."""
+        template = self._template_editor.get('1.0', 'end-1c').strip()
+        if not template:
+            messagebox.showwarning('Generate', 'Please enter or select a prompt template.')
+            return
+
+        variables = self._collect_variable_values()
+        category = self._category_var.get()
+        template_name = self._template_var.get()
+
+        if self._generation_thread and self._generation_thread.is_alive():
+            messagebox.showwarning('Generate', 'Generation is already in progress.')
+            return
+
+        self._set_generating_state(True)
+        self._result_textbox.configure(state='normal')
+        self._result_textbox.delete('1.0', 'end')
+        self._result_textbox.insert('1.0', 'Generating...')
+        self._result_textbox.configure(state='disabled')
+
+        self._generation_thread = threading.Thread(
+            target=lambda: asyncio.run(self.on_generate_clicked(category, template_name, variables)),
+            daemon=True,
+        )
+        self._generation_thread.start()
+
+    async def on_generate_clicked(self, category: str, template_name: str, variables: dict[str, str]) -> None:
+        """Generate content from the current prompt.
+
+        Parameters
+        ----------
+        category:
+            Selected content category.
+        template_name:
+            Selected template name.
+        variables:
+            Variable values for template substitution.
+        """
+        try:
+            job = self._generation_service.create_job(
+                category=category,
+                template_name=template_name,
+                variables=variables,
+                media_types=[MediaType.TEXT],
+            )
+            completed_job = await self._generation_service.execute_job(job)
+            if completed_job.result:
+                self.after(0, self.display_response, completed_job.result.text)
+            else:
+                self.after(0, self.show_error, RuntimeError('No result returned from generation.'))
+        except Exception as exc:
+            self.after(0, self.show_error, exc)
+        finally:
+            self.after(0, self._set_generating_state, False)
+
+    def display_response(self, response_text: str) -> None:
+        """Display generated content in the result textbox.
+
+        Parameters
+        ----------
+        response_text:
+            The generated text to display.
+        """
+        self._result_textbox.configure(state='normal')
+        self._result_textbox.delete('1.0', 'end')
+        self._result_textbox.insert('1.0', response_text)
+        self._result_textbox.configure(state='disabled')
+        self._logger.info('Displayed generation response')
+
+    def show_error(self, error: Exception) -> None:
+        """Show error message in UI.
+
+        Parameters
+        ----------
+        error:
+            The error to display.
+        """
+        self._result_textbox.configure(state='normal')
+        self._result_textbox.delete('1.0', 'end')
+        self._result_textbox.insert('1.0', f'Error: {error}')
+        self._result_textbox.configure(state='disabled')
+        self._logger.error('Generation error: %s', error)
+        messagebox.showerror('Generation Error', str(error))
+
+    def _set_generating_state(self, generating: bool) -> None:
+        """Set UI state for generation in progress.
+
+        Parameters
+        ----------
+        generating:
+            True if generation is in progress.
+        """
+        if generating:
+            self._generate_button.configure(state='disabled', text='Generating...')
+            self._generate_button.update_idletasks()
+        else:
+            self._generate_button.configure(state='normal', text='Generate')
+            self._generate_button.update_idletasks()
 
     def _show_error(self, exc: Exception) -> None:
         messagebox.showerror('Error', str(exc))

@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Dict
 
 # Current schema version
-LATEST_VERSION = 1
+LATEST_VERSION = 2
 
 # Migration SQL statements
 MIGRATIONS: Dict[int, str] = {
@@ -71,5 +71,22 @@ MIGRATIONS: Dict[int, str] = {
         created_at TEXT NOT NULL,
         FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
-    """
+    """,
+    2: """
+    -- generations table for tracking AI generation jobs
+    CREATE TABLE IF NOT EXISTS generations (
+        id TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        template_name TEXT NOT NULL,
+        variables TEXT NOT NULL,
+        media_types TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        result TEXT,
+        error TEXT,
+        created_at TEXT NOT NULL,
+        completed_at TEXT,
+        duration_ms REAL,
+        metadata TEXT
+    );
+    """,
 }
