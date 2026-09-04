@@ -13,9 +13,15 @@ import yaml
 
 from config.config import Config
 from src.database.database_manager import DatabaseManager
-from src.engine.ai_engine import GenerationResponse
+from src.engine.ai_engine import (
+    AIEngineError,
+    EngineConfig,
+    EngineState,
+    GenerationRequest,
+    GenerationResponse,
+)
 from src.engine.mock_engine import MockModelManager, MockScenario
-from src.engine.model_manager import ProviderConfig, ProviderType
+from src.engine.model_manager import ModelManager, ProviderConfig, ProviderType
 from src.engine.prompt_engine import PromptEngine
 from src.services.generation_repository import GenerationRepository
 from src.services.generation_service import (
@@ -299,3 +305,172 @@ class TestGenerationService:
         assert job.metadata["image_response"] == "mock_image_data"
         assert job.metadata["voice_response"] == "mock_voice_data"
         assert job.metadata["video_response"] == "mock_video_data"
+
+
+class TestGenerationServiceEngineLifecycle:
+    """Tests for engine lifecycle management in GenerationService."""
+
+    @pytest.mark.asyncio
+    async def test_execute_job_shuts_down_lazily_initialized_engine(
+        self,
+        tmp_path: Path,
+        db: DatabaseManager,
+        repository: GenerationRepository,
+        prompt_engine: PromptEngine,
+    ) -> None:
+        """execute_job shuts down engines that were lazily initialized during the job."""
+        mock_engine = MagicMock()
+        mock_engine.is_ready = False
+        mock_engine.state = EngineState.IDLE
+
+        def _make_ready() -> None:
+            mock_engine.is_ready = True
+            mock_engine.state = EngineState.READY
+
+        mock_engine.initialize = AsyncMock(side_effect=_make_ready)
+        mock_engine.generate = AsyncMock(
+            return_value=GenerationResponse(
+                text="mock response", model="mock", provider="mock"
+            )
+        )
+        mock_engine.shutdown = AsyncMock()
+
+        mm = ModelManager()
+        mm.register_provider(
+            ProviderConfig(
+                provider_type=ProviderType.OPENROUTER,
+                api_key="test-key",
+                base_url="http://mock",
+                models=["mock"],
+                enabled=True,
+                priority=1,
+                metadata={"supported_tasks": ["text_generation"]},
+            )
+        )
+        mm.register_engine(ProviderType.OPENROUTER, mock_engine)
+
+        service = GenerationService(
+            prompt_engine=prompt_engine,
+            model_manager=mm,
+            repository=repository,
+        )
+
+        job = service.create_job(
+            category="stories",
+            template_name="story",
+            variables={"name": "Alice"},
+            media_types=[MediaType.TEXT],
+        )
+        completed = await service.execute_job(job)
+
+        assert completed.status == GenerationStatus.COMPLETED
+        mock_engine.initialize.assert_called_once()
+        mock_engine.shutdown.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_execute_job_does_not_shut_down_already_ready_engine(
+        self,
+        tmp_path: Path,
+        db: DatabaseManager,
+        repository: GenerationRepository,
+        prompt_engine: PromptEngine,
+    ) -> None:
+        """execute_job does not shut down engines that were already ready before the job."""
+        mock_engine = MagicMock()
+        mock_engine.is_ready = True
+        mock_engine.state = EngineState.READY
+        mock_engine.initialize = AsyncMock()
+        mock_engine.generate = AsyncMock(
+            return_value=GenerationResponse(
+                text="mock response", model="mock", provider="mock"
+            )
+        )
+        mock_engine.shutdown = AsyncMock()
+
+        mm = ModelManager()
+        mm.register_provider(
+            ProviderConfig(
+                provider_type=ProviderType.OPENROUTER,
+                api_key="test-key",
+                base_url="http://mock",
+                models=["mock"],
+                enabled=True,
+                priority=1,
+                metadata={"supported_tasks": ["text_generation"]},
+            )
+        )
+        mm.register_engine(ProviderType.OPENROUTER, mock_engine)
+
+        service = GenerationService(
+            prompt_engine=prompt_engine,
+            model_manager=mm,
+            repository=repository,
+        )
+
+        job = service.create_job(
+            category="stories",
+            template_name="story",
+            variables={"name": "Alice"},
+            media_types=[MediaType.TEXT],
+        )
+        completed = await service.execute_job(job)
+
+        assert completed.status == GenerationStatus.COMPLETED
+        mock_engine.initialize.assert_not_called()
+        mock_engine.shutdown.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_execute_job_shuts_down_engine_on_failure(
+        self,
+        tmp_path: Path,
+        db: DatabaseManager,
+        repository: GenerationRepository,
+        prompt_engine: PromptEngine,
+    ) -> None:
+        """execute_job shuts down lazily initialized engines even when generation fails."""
+        mock_engine = MagicMock()
+        mock_engine.is_ready = False
+        mock_engine.state = EngineState.IDLE
+
+        def _make_ready() -> None:
+            mock_engine.is_ready = True
+            mock_engine.state = EngineState.READY
+
+        mock_engine.initialize = AsyncMock(side_effect=_make_ready)
+        mock_engine.generate = AsyncMock(
+            side_effect=AIEngineError("mock error", provider="mock")
+        )
+        mock_engine.shutdown = AsyncMock()
+
+        mm = ModelManager()
+        mm.register_provider(
+            ProviderConfig(
+                provider_type=ProviderType.OPENROUTER,
+                api_key="test-key",
+                base_url="http://mock",
+                models=["mock"],
+                enabled=True,
+                priority=1,
+                metadata={"supported_tasks": ["text_generation"]},
+            )
+        )
+        mm.register_engine(ProviderType.OPENROUTER, mock_engine)
+
+        service = GenerationService(
+            prompt_engine=prompt_engine,
+            model_manager=mm,
+            repository=repository,
+        )
+
+        job = service.create_job(
+            category="stories",
+            template_name="story",
+            variables={"name": "Alice"},
+            media_types=[MediaType.TEXT],
+        )
+
+        with pytest.raises(AIEngineError):
+            await service.execute_job(job)
+
+        mock_engine.initialize.assert_called_once()
+        mock_engine.shutdown.assert_called_once()

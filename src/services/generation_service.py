@@ -192,6 +192,12 @@ class GenerationService:
         start_time = time.time()
         self._notify_progress(job.id, 0.0, "Starting generation...")
 
+        engines_to_cleanup = {
+            provider_type
+            for provider_type, engine in getattr(self.model_manager, "_engines", {}).items()
+            if not engine.is_ready
+        }
+
         try:
             # Step 1: Build prompt
             self._notify_progress(job.id, 0.1, "Building prompt...")
@@ -253,6 +259,15 @@ class GenerationService:
             self.repository.save(job)
             logger.error("Job %s failed: %s", job.id, exc)
             raise
+
+        finally:
+            for provider_type in engines_to_cleanup:
+                engine = getattr(self.model_manager, "_engines", {}).get(provider_type)
+                if engine is not None:
+                    try:
+                        await engine.shutdown()
+                    except Exception:
+                        pass
 
         return job
 

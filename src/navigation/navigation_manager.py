@@ -160,6 +160,7 @@ class NavigationManager:
                     self,
                     variable_registry=self._shared_dependencies["variable_registry"],
                     template_registry=self._shared_dependencies["template_registry"],
+                    generation_service=self._shared_dependencies.get("generation_service"),
                 )
             else:
                 self._page_instances[page_name] = page_class(

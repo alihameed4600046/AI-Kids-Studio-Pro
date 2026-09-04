@@ -112,7 +112,8 @@ class MainWindow(ctk.CTk):
             self._logger,
             shared_dependencies={
                 "variable_registry": self._variable_registry,
-                "template_registry": self._template_registry
+                "template_registry": self._template_registry,
+                "generation_service": self._bootstrap.generation_service,
             }
         )
         self._navigation_manager.register_page("home", HomePage)

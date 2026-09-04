@@ -12,6 +12,7 @@ The bootstrap follows a specific initialization order:
 5. Database Manager
 6. Project Manager
 7. File Manager
+8. Model Manager (with OpenRouter provider)
 
 This order ensures that dependencies are available when needed (e.g., logging
 is available for all subsequent initializations, database is ready before
@@ -20,19 +21,24 @@ Project Manager, etc.).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import sys
 from pathlib import Path
 from typing import Optional
 
 from config.config import Config
+from src.engine.model_manager import ModelManager, ProviderConfig, ProviderType, TaskType
+from src.engine.openrouter_engine import OpenRouterEngine
 from src.logging.logger import get_logger
 from src.logging_config import configure_logging
+from src.services.generation_repository import GenerationRepository
+from src.services.generation_service import GenerationService
 from src.settings.manager import SettingsManager
 from src.theme.theme_manager import ThemeManager
 from src.database.database_manager import DatabaseManager
-from src.project.project_manager import ProjectManager
 from src.file_manager.file_manager import FileManager
+from src.project.project_manager import ProjectManager
 
 __all__ = ["ApplicationBootstrap", "bootstrap"]
 
@@ -58,6 +64,8 @@ class ApplicationBootstrap:
         database_manager: Database manager instance.
         project_manager: Project manager instance.
         file_manager: File manager instance.
+        model_manager: Model manager with registered AI providers.
+        generation_service: Generation service wired with the model manager.
     """
 
     def __init__(self, config_path: Optional[str | Path] = None) -> None:
@@ -75,6 +83,8 @@ class ApplicationBootstrap:
         self._database_manager: Optional[DatabaseManager] = None
         self._project_manager: Optional[ProjectManager] = None
         self._file_manager: Optional[FileManager] = None
+        self._model_manager: Optional[ModelManager] = None
+        self._generation_service: Optional[GenerationService] = None
         self._initialized = False
 
     # ------------------------------------------------------------------
@@ -130,6 +140,20 @@ class ApplicationBootstrap:
         return self._file_manager
 
     @property
+    def model_manager(self) -> ModelManager:
+        """Get the model manager with registered AI providers."""
+        if self._model_manager is None:
+            raise BootstrapError("Model manager not initialized. Call initialize() first.")
+        return self._model_manager
+
+    @property
+    def generation_service(self) -> GenerationService:
+        """Get the generation service wired with the model manager."""
+        if self._generation_service is None:
+            raise BootstrapError("Generation service not initialized. Call initialize() first.")
+        return self._generation_service
+
+    @property
     def is_initialized(self) -> bool:
         """Check if bootstrap has been completed."""
         return self._initialized
@@ -158,6 +182,7 @@ class ApplicationBootstrap:
             self._initialize_database_manager()
             self._initialize_project_manager()
             self._initialize_file_manager()
+            self._initialize_model_manager()
 
             self._initialized = True
             self.logger.info("Application bootstrap completed successfully")
@@ -245,6 +270,44 @@ class ApplicationBootstrap:
         self._file_manager = FileManager(base_path)
         self._logger.info("File manager initialized with base path: %s", base_path)
 
+    def _initialize_model_manager(self) -> None:
+        """Initialize the model manager with registered AI providers.
+
+        Registers OpenRouter as a text-generation provider using configuration
+        from the settings manager. The OpenRouterEngine is created via its
+        ``from_settings`` classmethod so that the API key, model, and base URL
+        all come from the existing settings/configuration system.
+        """
+        self._model_manager = ModelManager()
+
+        api_key = self._settings_manager.get("openrouter_api_key")
+        model = self._settings_manager.get("openrouter_model", OpenRouterEngine.DEFAULT_MODEL)
+        base_url = self._settings_manager.get("openrouter_base_url", OpenRouterEngine.DEFAULT_BASE_URL)
+
+        engine = OpenRouterEngine.from_settings(
+            settings_manager=self._settings_manager,
+        )
+
+        self._model_manager.register_provider(
+            ProviderConfig(
+                provider_type=ProviderType.OPENROUTER,
+                api_key=api_key,
+                base_url=base_url,
+                models=[model],
+                enabled=bool(api_key),
+                priority=1,
+                metadata={"supported_tasks": [TaskType.TEXT_GENERATION.value]},
+            )
+        )
+        self._model_manager.register_engine(ProviderType.OPENROUTER, engine)
+
+        repository = GenerationRepository(db_manager=self._database_manager)
+        self._generation_service = GenerationService(
+            model_manager=self._model_manager,
+            repository=repository,
+        )
+        self._logger.info("Model manager initialized with OpenRouter provider")
+
     # ------------------------------------------------------------------
     # Cleanup
     # ------------------------------------------------------------------
@@ -274,6 +337,22 @@ class ApplicationBootstrap:
                 self.logger.debug("Project manager database closed")
             except Exception as exc:
                 self.logger.exception("Error closing project manager: %s", exc)
+
+        # Shutdown AI engines
+        if self._model_manager:
+            for engine in self._model_manager._engines.values():
+                try:
+                    asyncio.get_running_loop()
+                    self.logger.debug(
+                        "Skipping async engine shutdown inside running event loop"
+                    )
+                    continue
+                except RuntimeError:
+                    pass
+                try:
+                    asyncio.run(engine.shutdown())
+                except Exception as exc:
+                    self.logger.debug("Engine shutdown skipped: %s", exc)
 
         self._initialized = False
         self.logger.info("Application shutdown complete")
