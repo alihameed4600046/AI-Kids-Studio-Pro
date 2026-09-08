@@ -60,11 +60,26 @@ class PromptEngine:
         Dictionary of variable names to their current values.
     """
 
-    def __init__(self, prompts_dir: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        prompts_dir: str | Path | None = None,
+        template_registry: Any | None = None,
+    ) -> None:
         self.prompts_dir = Path(prompts_dir) if prompts_dir else Path("config/prompts")
         self.templates: dict[str, str] = {}
         self.variables: dict[str, Any] = {}
         self._variable_pattern = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+        self._template_registry = template_registry
+        if template_registry is not None:
+            self._register_templates_from_registry()
+
+    def _register_templates_from_registry(self) -> None:
+        """Register all templates from the provided TemplateRegistry into the in-memory cache."""
+        if self._template_registry is None:
+            return
+        for category in self._template_registry.get_categories():
+            for template_def in self._template_registry.get_templates(category):
+                self.templates[template_def.name] = template_def.template
 
     def load_template(self, name: str) -> str:
         """Load a prompt template by name.

@@ -381,6 +381,12 @@ class ModelManager:
                 )
 
         last_error: Exception | None = None
+        if not providers_to_try:
+            raise AIEngineError(
+                "No providers available. Configure or enable an AI provider in Settings.",
+                provider=provider_type.value if provider_type else None,
+            )
+
         for prov in providers_to_try:
             try:
                 return await self._generate_with_provider(prov, request)

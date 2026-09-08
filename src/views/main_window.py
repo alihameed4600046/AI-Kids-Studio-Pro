@@ -18,11 +18,13 @@ from src.logging.logger import get_logger
 from src.config import Config
 from src.views.navigation import NavigationManager, HomePage
 from src.views.pages.prompts_page import PromptsPage
+from src.views.pages.settings_page import SettingsPage
 from src.views.components import Header, Sidebar, StatusBar
 from src.views.dialogs.create_project_dialog import CreateProjectDialog
 from src.project.project_service import ProjectService
 from src.prompt.variable_registry import VariableRegistry
 from src.prompt.template_registry import TemplateRegistry
+from src.services.generation_service import GenerationService
 
 
 __all__ = ["MainWindow"]
@@ -107,20 +109,26 @@ class MainWindow(ctk.CTk):
         self._logger.info("Main window initialized: %s (%dx%d)", self._app_title, window_settings['width'], window_settings['height'])
 
         # Initialize NavigationManager and register HomePage
+        generation_service = GenerationService(
+            template_registry=self._template_registry,
+            model_manager=self._bootstrap.model_manager,
+            repository=self._bootstrap.generation_service.repository,
+        )
         self._navigation_manager = NavigationManager(
             self.content_container,
             self._logger,
             shared_dependencies={
                 "variable_registry": self._variable_registry,
                 "template_registry": self._template_registry,
-                "generation_service": self._bootstrap.generation_service,
+                "generation_service": generation_service,
+                "settings_manager": self._bootstrap.settings_manager,
             }
         )
         self._navigation_manager.register_page("home", HomePage)
         self._navigation_manager.register_page("projects", HomePage)
         self._navigation_manager.register_page("prompts", PromptsPage)
         self._navigation_manager.register_page("voices", HomePage)
-        self._navigation_manager.register_page("settings", HomePage)
+        self._navigation_manager.register_page("settings", SettingsPage)
         self._navigation_manager.navigate_to("home")
         self._logger.info("NavigationManager initialized with HomePage")
 

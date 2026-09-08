@@ -474,3 +474,81 @@ class TestGenerationServiceEngineLifecycle:
 
         mock_engine.initialize.assert_called_once()
         mock_engine.shutdown.assert_called_once()
+
+
+class TestGenerationServiceTemplateRegistryBridge:
+    """Tests for GenerationService integration with TemplateRegistry."""
+
+    def test_prompt_engine_builds_request_from_builtin_template(
+        self,
+        tmp_path: Path,
+        db: DatabaseManager,
+        repository: GenerationRepository,
+    ) -> None:
+        """PromptEngine can build a GenerationRequest from a builtin TemplateRegistry template."""
+        from src.prompt.template_registry import TemplateDefinition, TemplateRegistry
+
+        registry = TemplateRegistry()
+        registry.register(
+            TemplateDefinition(
+                name="ABC Learning",
+                category="Education",
+                description="ABC Learning builtin.",
+                template="Letter {{letter}}, Animal {{animal}}",
+                variables=["letter", "animal"],
+            )
+        )
+
+        service = GenerationService(
+            template_registry=registry,
+            model_manager=MockModelManager(),
+            repository=repository,
+        )
+
+        request = service.prompt_engine.build_request(
+            "ABC Learning", {"letter": "A", "animal": "Ant"}
+        )
+        assert request.prompt == "Letter A, Animal Ant"
+
+    @pytest.mark.asyncio
+    async def test_builtin_template_does_not_require_yaml_file(
+        self,
+        tmp_path: Path,
+        db: DatabaseManager,
+        repository: GenerationRepository,
+    ) -> None:
+        """Builtin templates work even when config/prompts/ does not exist."""
+        from src.prompt.template_registry import TemplateDefinition, TemplateRegistry
+
+        registry = TemplateRegistry()
+        registry.register(
+            TemplateDefinition(
+                name="Numbers Learning",
+                category="Education",
+                description="Numbers builtin.",
+                template="Number {{number}}",
+                variables=["number"],
+            )
+        )
+
+        service = GenerationService(
+            template_registry=registry,
+            model_manager=MockModelManager(),
+            repository=repository,
+        )
+
+        request = service.prompt_engine.build_request(
+            "Numbers Learning", {"number": "5"}
+        )
+        assert request.prompt == "Number 5"
+
+        job = service.create_job(
+            category="Education",
+            template_name="Numbers Learning",
+            variables={"number": "5"},
+            media_types=[MediaType.TEXT],
+        )
+        completed = await service.execute_job(job)
+
+        assert completed.status == GenerationStatus.COMPLETED
+        assert completed.result is not None

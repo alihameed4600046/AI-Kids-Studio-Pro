@@ -91,8 +91,9 @@ class GenerationService:
         prompt_engine: PromptEngine | None = None,
         model_manager: ModelManager | None = None,
         repository: GenerationRepository | None = None,
+        template_registry: Any | None = None,
     ) -> None:
-        self.prompt_engine = prompt_engine or PromptEngine()
+        self.prompt_engine = prompt_engine or PromptEngine(template_registry=template_registry)
         self.model_manager = model_manager or ModelManager()
         self.repository = repository or GenerationRepository()
         self._jobs: dict[str, GenerationJob] = {}

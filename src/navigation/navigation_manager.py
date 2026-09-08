@@ -162,6 +162,12 @@ class NavigationManager:
                     template_registry=self._shared_dependencies["template_registry"],
                     generation_service=self._shared_dependencies.get("generation_service"),
                 )
+            elif page_name == "settings":
+                self._page_instances[page_name] = page_class(
+                    self._content_container,
+                    self,
+                    settings_manager=self._shared_dependencies.get("settings_manager"),
+                )
             else:
                 self._page_instances[page_name] = page_class(
                     self._content_container,

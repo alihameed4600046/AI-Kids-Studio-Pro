@@ -27,6 +27,7 @@ from config.config import Config
 from src.bootstrap import ApplicationBootstrap
 from src.database.database_manager import DatabaseManager
 from src.engine.ai_engine import GenerationRequest
+from src.engine.mock_engine import MockEngine, MockScenario
 from src.engine.model_manager import ModelManager, ProviderConfig, ProviderType, TaskType
 from src.engine.openrouter_engine import OpenRouterEngine
 from src.project.project_manager import ProjectManager
@@ -205,5 +206,103 @@ class TestBootstrapOpenRouterIntegration:
             provider = mm.registry.get(ProviderType.OPENROUTER)
             assert provider is not None
             assert not provider.enabled
+        finally:
+            bootstrap.shutdown()
+
+
+class TestBootstrapMockProvider:
+    """Integration tests for the development-only Mock provider."""
+
+    def _reset_singletons(self) -> None:
+        DatabaseManager._instance = None
+        ProjectManager._instance = None
+        SettingsManager._instance = None
+        ThemeManager._instance = None
+
+    def test_mock_provider_not_registered_by_default(self, temp_app: Path) -> None:
+        """Mock provider is absent unless the dev environment variable is set."""
+        self._reset_singletons()
+        settings_data = {
+            "openrouter_model": "openai/gpt-4o",
+            "theme": {},
+            "window": {"width": 1200, "height": 800},
+            "recent_projects": [],
+        }
+        (temp_app / "settings.json").write_text(
+            json.dumps(settings_data), encoding="utf-8"
+        )
+
+        bootstrap = ApplicationBootstrap(temp_app / "config.yaml")
+        bootstrap.initialize()
+
+        try:
+            mm = bootstrap.model_manager
+            assert ProviderType.MOCK not in mm.registry._providers
+            assert ProviderType.MOCK not in mm._engines
+        finally:
+            bootstrap.shutdown()
+
+    def test_mock_provider_registered_with_env_var(self, temp_app: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Mock provider is registered when AI_KIDS_STUDIO_MOCK=1."""
+        monkeypatch.setenv("AI_KIDS_STUDIO_MOCK", "1")
+        self._reset_singletons()
+        settings_data = {
+            "openrouter_model": "openai/gpt-4o",
+            "theme": {},
+            "window": {"width": 1200, "height": 800},
+            "recent_projects": [],
+        }
+        (temp_app / "settings.json").write_text(
+            json.dumps(settings_data), encoding="utf-8"
+        )
+
+        bootstrap = ApplicationBootstrap(temp_app / "config.yaml")
+        bootstrap.initialize()
+
+        try:
+            mm = bootstrap.model_manager
+            provider = mm.registry.get(ProviderType.MOCK)
+            assert provider is not None
+            assert provider.enabled
+            assert provider.priority == 100
+            assert "text_generation" in provider.metadata.get("supported_tasks", [])
+
+            engine = mm._engines.get(ProviderType.MOCK)
+            assert engine is not None
+            assert isinstance(engine, MockEngine)
+        finally:
+            bootstrap.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_mock_provider_generates_deterministic_response(self, temp_app: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """End-to-end generation routes through MockEngine when dev mode is active."""
+        monkeypatch.setenv("AI_KIDS_STUDIO_MOCK", "1")
+        self._reset_singletons()
+        settings_data = {
+            "openrouter_model": "openai/gpt-4o",
+            "theme": {},
+            "window": {"width": 1200, "height": 800},
+            "recent_projects": [],
+        }
+        (temp_app / "settings.json").write_text(
+            json.dumps(settings_data), encoding="utf-8"
+        )
+
+        bootstrap = ApplicationBootstrap(temp_app / "config.yaml")
+        bootstrap.initialize()
+
+        try:
+            mm = bootstrap.model_manager
+            gs = bootstrap.generation_service
+            assert gs is not None
+            assert gs.model_manager is mm
+
+            request = GenerationRequest(prompt="Say hello")
+            response = await mm.generate(request, provider_type=ProviderType.MOCK)
+
+            assert response.text == "This is a mock response from the AI engine."
+            assert response.provider == "mock"
+            assert response.finish_reason == "stop"
+            assert response.tokens_used > 0
         finally:
             bootstrap.shutdown()

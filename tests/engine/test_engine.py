@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -19,6 +20,7 @@ from src.engine.ai_engine import (
 from src.engine.mock_engine import MockEngine, MockModelManager, MockScenario
 from src.engine.model_manager import ModelManager, ProviderConfig, ProviderType, TaskType
 from src.engine.prompt_engine import PromptEngine, PromptTemplateError
+from src.prompt.template_registry import TemplateDefinition, TemplateRegistry
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -181,6 +183,45 @@ class TestModelManager:
         assert "mock" in status
         assert "enabled" in status["mock"]
 
+    @pytest.mark.asyncio
+    async def test_generate_raises_clear_error_when_no_providers_enabled(
+        self,
+    ) -> None:
+        """Zero enabled providers produces a clear error, not 'Last error: None'."""
+        manager = ModelManager()
+        request = GenerationRequest(prompt="Hello")
+        with pytest.raises(AIEngineError, match="No providers available"):
+            await manager.generate(request)
+
+    @pytest.mark.asyncio
+    async def test_generate_preserves_all_failed_error_when_providers_exhausted(
+        self,
+    ) -> None:
+        """When providers exist but all fail, the existing 'All providers failed' message is preserved."""
+        manager = ModelManager()
+        failing_engine = MagicMock()
+        failing_engine.is_ready = True
+        failing_engine.state = EngineState.READY
+        failing_engine.initialize = AsyncMock()
+        failing_engine.generate = AsyncMock(
+            side_effect=AIEngineError("mock provider failure", provider="mock")
+        )
+        failing_engine.shutdown = AsyncMock()
+
+        manager.register_provider(
+            ProviderConfig(
+                provider_type=ProviderType.MOCK,
+                enabled=True,
+                priority=1,
+                metadata={"supported_tasks": ["text_generation"]},
+            )
+        )
+        manager.register_engine(ProviderType.MOCK, failing_engine)
+
+        request = GenerationRequest(prompt="Hello")
+        with pytest.raises(AIEngineError, match="All providers failed"):
+            await manager.generate(request)
+
 
 class TestMockModelManager:
     """Tests for MockModelManager."""
@@ -210,6 +251,65 @@ class TestMockModelManager:
         async for chunk in manager.stream(request):
             chunks.append(chunk)
         assert len(chunks) > 0
+
+
+class TestPromptEngineTemplateRegistryBridge:
+    """Tests for PromptEngine integration with TemplateRegistry."""
+
+    def _make_registry(self) -> TemplateRegistry:
+        registry = TemplateRegistry()
+        registry.register(
+            TemplateDefinition(
+                name="Test Builtin",
+                category="Education",
+                description="A test builtin template.",
+                template="Hello {{name}}, welcome to {{place}}!",
+                variables=["name", "place"],
+            )
+        )
+        return registry
+
+    def test_load_builtin_template_without_yaml(self) -> None:
+        """Builtin TemplateRegistry templates are available without YAML files."""
+        registry = self._make_registry()
+        engine = PromptEngine(template_registry=registry)
+
+        result = engine.load_template("Test Builtin")
+        assert result == "Hello {{name}}, welcome to {{place}}!"
+
+    def test_render_builtin_template_with_variables(self) -> None:
+        """Builtin templates can be rendered with variable substitution."""
+        registry = self._make_registry()
+        engine = PromptEngine(template_registry=registry)
+        engine.set_variables({"name": "Alice", "place": "Wonderland"})
+
+        result = engine.render("Test Builtin")
+        assert result == "Hello Alice, welcome to Wonderland!"
+
+    def test_yaml_template_still_works_when_not_in_registry(self, tmp_path: Path) -> None:
+        """YAML loading is preserved for templates not provided by the registry."""
+        yaml_file = tmp_path / "custom.yaml"
+        yaml_file.write_text('prompt: "YAML {{value}} content"', encoding="utf-8")
+        engine = PromptEngine(prompts_dir=tmp_path)
+
+        result = engine.load_template("custom")
+        assert result == '"YAML {{value}} content"'
+
+    def test_registry_template_takes_precedence_over_yaml(self, tmp_path: Path) -> None:
+        """In-memory registry templates take precedence over YAML files."""
+        registry = self._make_registry()
+        yaml_file = tmp_path / "Test Builtin.yaml"
+        yaml_file.write_text('prompt: "YAML version"', encoding="utf-8")
+        engine = PromptEngine(prompts_dir=tmp_path, template_registry=registry)
+
+        result = engine.load_template("Test Builtin")
+        assert result == "Hello {{name}}, welcome to {{place}}!"
+
+    def test_prompt_engine_without_registry_unchanged(self) -> None:
+        """PromptEngine without a registry behaves exactly as before."""
+        engine = PromptEngine()
+        assert engine._template_registry is None
+        assert engine.templates == {}
 
 
 if __name__ == "__main__":

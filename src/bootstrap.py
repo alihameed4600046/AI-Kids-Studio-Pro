@@ -23,12 +23,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Optional
 
 from config.config import Config
 from src.engine.model_manager import ModelManager, ProviderConfig, ProviderType, TaskType
+from src.engine.mock_engine import MockEngine
 from src.engine.openrouter_engine import OpenRouterEngine
 from src.logging.logger import get_logger
 from src.logging_config import configure_logging
@@ -229,6 +231,8 @@ class ApplicationBootstrap:
             "theme": {},
             "window": {"width": 1200, "height": 800},
             "recent_projects": [],
+            "openrouter_model": OpenRouterEngine.DEFAULT_MODEL,
+            "openrouter_base_url": OpenRouterEngine.DEFAULT_BASE_URL,
         }
 
         self._settings_manager = SettingsManager(settings_path, default_settings)
@@ -277,6 +281,10 @@ class ApplicationBootstrap:
         from the settings manager. The OpenRouterEngine is created via its
         ``from_settings`` classmethod so that the API key, model, and base URL
         all come from the existing settings/configuration system.
+
+        When the ``AI_KIDS_STUDIO_MOCK`` environment variable is set to ``1``,
+        a Mock provider is also registered for local UI smoke testing without
+        real API credentials.
         """
         self._model_manager = ModelManager()
 
@@ -284,9 +292,11 @@ class ApplicationBootstrap:
         model = self._settings_manager.get("openrouter_model", OpenRouterEngine.DEFAULT_MODEL)
         base_url = self._settings_manager.get("openrouter_base_url", OpenRouterEngine.DEFAULT_BASE_URL)
 
-        engine = OpenRouterEngine.from_settings(
-            settings_manager=self._settings_manager,
-        )
+        engine = None
+        if api_key:
+            engine = OpenRouterEngine.from_settings(
+                settings_manager=self._settings_manager,
+            )
 
         self._model_manager.register_provider(
             ProviderConfig(
@@ -299,7 +309,24 @@ class ApplicationBootstrap:
                 metadata={"supported_tasks": [TaskType.TEXT_GENERATION.value]},
             )
         )
-        self._model_manager.register_engine(ProviderType.OPENROUTER, engine)
+        if engine is not None:
+            self._model_manager.register_engine(ProviderType.OPENROUTER, engine)
+
+        if os.environ.get("AI_KIDS_STUDIO_MOCK") == "1":
+            mock_engine = MockEngine()
+            self._model_manager.register_provider(
+                ProviderConfig(
+                    provider_type=ProviderType.MOCK,
+                    api_key=None,
+                    base_url=None,
+                    models=["mock-model"],
+                    enabled=True,
+                    priority=100,
+                    metadata={"supported_tasks": [TaskType.TEXT_GENERATION.value]},
+                )
+            )
+            self._model_manager.register_engine(ProviderType.MOCK, mock_engine)
+            self._logger.info("Mock provider registered for development")
 
         repository = GenerationRepository(db_manager=self._database_manager)
         self._generation_service = GenerationService(
