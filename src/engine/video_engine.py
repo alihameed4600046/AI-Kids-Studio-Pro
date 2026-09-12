@@ -24,6 +24,7 @@ from src.engine.ai_engine import (
     AuthenticationError,
     ContentFilterError,
     EngineConfig,
+    EngineNotReadyError,
     EngineState,
     GenerationRequest,
     GenerationResponse,

@@ -24,9 +24,11 @@ from src.engine.ai_engine import (
     AuthenticationError,
     ContentFilterError,
     EngineConfig,
+    EngineNotReadyError,
     EngineState,
     GenerationRequest,
     GenerationResponse,
+    RateLimitError,
 )
 from src.logging_config import configure_logging
 

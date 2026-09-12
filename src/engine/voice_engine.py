@@ -23,6 +23,7 @@ from src.engine.ai_engine import (
     AIEngineError,
     AuthenticationError,
     EngineConfig,
+    EngineNotReadyError,
     EngineState,
     GenerationRequest,
     GenerationResponse,
