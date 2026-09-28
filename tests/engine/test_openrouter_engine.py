@@ -10,12 +10,14 @@ import pytest
 import pytest_asyncio
 
 from src.engine.ai_engine import (
+    AIEngineError,
     AuthenticationError,
     EngineConfig,
     EngineState,
     GenerationRequest,
     GenerationResponse,
     RateLimitError,
+    RetryStrategy,
 )
 from src.engine.openrouter_engine import OpenRouterEngine
 
@@ -218,6 +220,84 @@ class TestOpenRouterEngine:
             request = GenerationRequest(prompt="Test")
             with pytest.raises(Exception, match="rate limit"):
                 await engine.generate(request)
+
+    @pytest.mark.asyncio
+    async def test_generate_retryable_upstream_error_retries(self, engine_factory) -> None:
+        engine = engine_factory(
+            max_retries=1,
+            retry_strategy=RetryStrategy.NONE,
+        )
+        await engine.initialize()
+
+        retryable_response = _make_mock_response(
+            503,
+            {
+                "error": {
+                    "code": "upstream_unavailable",
+                    "message": "The service is temporarily unavailable.",
+                    "isRetryable": True,
+                }
+            },
+        )
+        success_response = _make_mock_response(200, _make_response(text="Recovered"))
+        mock_post = MagicMock(side_effect=[retryable_response, success_response])
+
+        with patch.object(engine._session, "post", mock_post):
+            response = await engine.generate(GenerationRequest(prompt="Test"))
+
+        assert response.text == "Recovered"
+        assert mock_post.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_generate_non_retryable_upstream_error_raises_ai_engine_error(
+        self, engine_factory
+    ) -> None:
+        engine = engine_factory(max_retries=0)
+        await engine.initialize()
+
+        mock_response = _make_mock_response(
+            503,
+            {
+                "error": {
+                    "code": "upstream_unavailable",
+                    "message": "The service is unavailable.",
+                    "isRetryable": False,
+                }
+            },
+        )
+        mock_post = MagicMock(return_value=mock_response)
+
+        with patch.object(engine._session, "post", mock_post):
+            with pytest.raises(AIEngineError, match="OpenRouter API error 503"):
+                await engine.generate(GenerationRequest(prompt="Test"))
+
+    @pytest.mark.asyncio
+    async def test_generate_malformed_upstream_error_raises_ai_engine_error(
+        self, engine_factory
+    ) -> None:
+        engine = engine_factory(max_retries=0)
+        await engine.initialize()
+
+        mock_response = _make_mock_response(503)
+        mock_response.text = AsyncMock(return_value="not json")
+        mock_post = MagicMock(return_value=mock_response)
+
+        with patch.object(engine._session, "post", mock_post):
+            with pytest.raises(AIEngineError, match="OpenRouter API error 503"):
+                await engine.generate(GenerationRequest(prompt="Test"))
+
+    @pytest.mark.asyncio
+    async def test_generate_http_403_raises_auth_error(self, engine_factory) -> None:
+        engine = engine_factory()
+        await engine.initialize()
+
+        response_data = {"error": {"message": "Forbidden"}}
+        mock_response = _make_mock_response(403, response_data)
+        mock_post = MagicMock(return_value=mock_response)
+
+        with patch.object(engine._session, "post", mock_post):
+            with pytest.raises(AuthenticationError, match="authentication failed"):
+                await engine.generate(GenerationRequest(prompt="Test"))
 
     @pytest.mark.asyncio
     async def test_generate_timeout_handling(self, engine_factory) -> None:

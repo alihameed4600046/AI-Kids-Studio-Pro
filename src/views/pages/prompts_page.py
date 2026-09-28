@@ -18,6 +18,7 @@ from src.prompt.prompt_service import PromptService
 from src.prompt.template_registry import TemplateRegistry, TemplateDefinition
 from src.prompt.variable_registry import VariableRegistry
 from src.prompt.option_library import OptionLibrary
+from src.engine.voice_engine import VoiceConfig
 from src.services.generation_service import GenerationService, MediaType
 from src.views.pages.base_page import BasePage
 
@@ -95,6 +96,7 @@ class PromptsPage(BasePage):
         toolbar_frame.grid_columnconfigure(9, weight=0)
         toolbar_frame.grid_columnconfigure(10, weight=0)
         toolbar_frame.grid_columnconfigure(11, weight=0)
+        toolbar_frame.grid_columnconfigure(12, weight=0)
 
         ctk.CTkLabel(toolbar_frame, text='Category:').grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
         self._category_var = ctk.StringVar()
@@ -146,6 +148,9 @@ class PromptsPage(BasePage):
 
         self._generate_button = ctk.CTkButton(toolbar_frame, text='Generate', width=100, command=self._on_generate_clicked)
         self._generate_button.grid(row=0, column=11, padx=(0, 10), pady=10)
+
+        self._generate_voice_button = ctk.CTkButton(toolbar_frame, text='Generate Voice', width=120, command=self._on_generate_voice_clicked)
+        self._generate_voice_button.grid(row=0, column=12, padx=(0, 10), pady=10)
 
     def _create_title_entry(self) -> None:
         title_frame = ctk.CTkFrame(self)
@@ -717,6 +722,62 @@ class PromptsPage(BasePage):
         )
         self._generation_thread.start()
 
+    def _on_generate_voice_clicked(self) -> None:
+        template = self._template_editor.get('1.0', 'end-1c').strip()
+        if not template:
+            messagebox.showwarning('Generate Voice', 'Please enter or select a prompt template.')
+            return
+
+        category = self._category_var.get()
+        if not category or category.lower() != 'voices':
+            messagebox.showwarning('Generate Voice', 'Please select a Voices template.')
+            return
+
+        variables = dict(self._collect_variable_values())
+        template_name = self._template_var.get()
+
+        if self._generation_thread and self._generation_thread.is_alive():
+            messagebox.showwarning('Generate Voice', 'Generation is already in progress.')
+            return
+
+        variables['voice_config'] = VoiceConfig()
+        self._set_voice_generating_state(True)
+        self._result_textbox.configure(state='normal')
+        self._result_textbox.delete('1.0', 'end')
+        self._result_textbox.insert('1.0', 'Generating voice...')
+        self._result_textbox.configure(state='disabled')
+
+        self._generation_thread = threading.Thread(
+            target=lambda: asyncio.run(self.on_generate_voice_clicked(category, template_name, variables)),
+            daemon=True,
+        )
+        self._generation_thread.start()
+
+    async def on_generate_voice_clicked(self, category: str, template_name: str, variables: dict[str, Any]) -> None:
+        try:
+            job = self._generation_service.create_job(
+                category=category,
+                template_name=template_name,
+                variables=variables,
+                media_types=[MediaType.VOICE],
+            )
+            completed_job = await self._generation_service.execute_job(job)
+            voice_response = completed_job.metadata.get('voice_response')
+            if not voice_response:
+                raise RuntimeError('No voice response returned from generation.')
+            self.after(0, self.display_voice_status)
+        except Exception as exc:
+            self.after(0, self.show_error, exc)
+        finally:
+            self.after(0, self._set_voice_generating_state, False)
+
+    def display_voice_status(self) -> None:
+        self._result_textbox.configure(state='normal')
+        self._result_textbox.delete('1.0', 'end')
+        self._result_textbox.insert('1.0', 'Voice generation completed.')
+        self._result_textbox.configure(state='disabled')
+        self._logger.info('Voice generation completed')
+
     async def on_generate_clicked(self, category: str, template_name: str, variables: dict[str, str]) -> None:
         """Generate content from the current prompt.
 
@@ -774,6 +835,14 @@ class PromptsPage(BasePage):
         self._result_textbox.configure(state='disabled')
         self._logger.error('Generation error: %s', error)
         messagebox.showerror('Generation Error', str(error))
+
+    def _set_voice_generating_state(self, generating: bool) -> None:
+        if generating:
+            self._generate_voice_button.configure(state='disabled', text='Generating...')
+            self._generate_voice_button.update_idletasks()
+        else:
+            self._generate_voice_button.configure(state='normal', text='Generate Voice')
+            self._generate_voice_button.update_idletasks()
 
     def _set_generating_state(self, generating: bool) -> None:
         """Set UI state for generation in progress.

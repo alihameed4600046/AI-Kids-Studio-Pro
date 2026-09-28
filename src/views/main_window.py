@@ -12,6 +12,8 @@ from tkinter import filedialog
 from typing import Optional
 
 from src.bootstrap import ApplicationBootstrap
+from src.engine.voice_engine import EdgeTTSEngine
+from src.engine.video_engine import MockVideoEngine
 from src.theme.theme_manager import ThemeManager
 from src.theme.theme_models import ThemeSettings
 from src.logging.logger import get_logger
@@ -114,6 +116,8 @@ class MainWindow(ctk.CTk):
             model_manager=self._bootstrap.model_manager,
             repository=self._bootstrap.generation_service.repository,
         )
+        generation_service.set_voice_engine(EdgeTTSEngine())
+        generation_service.set_video_engine(MockVideoEngine())
         self._navigation_manager = NavigationManager(
             self.content_container,
             self._logger,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import sys
 import unittest
 from pathlib import Path
@@ -28,12 +29,69 @@ class DummyCTkFrame:
 _mock_ctk = MagicMock()
 _mock_ctk.CTkBaseClass = object
 _mock_ctk.CTkFrame = DummyCTkFrame
-sys.modules.setdefault("customtkinter", _mock_ctk)
 
 _mock_tk = MagicMock()
-sys.modules.setdefault("tkinter", _mock_tk)
-sys.modules.setdefault("tkinter.filedialog", _mock_tk.filedialog)
-sys.modules.setdefault("tkinter.messagebox", _mock_tk.messagebox)
+
+# Save the original sys.modules entries so we can restore them after tests,
+# avoiding process-wide contamination that breaks other test modules.
+_saved_modules = {
+    k: sys.modules.get(k) for k in (
+        "customtkinter",
+        "tkinter",
+        "tkinter.filedialog",
+        "tkinter.messagebox",
+    )
+}
+
+sys.modules["customtkinter"] = _mock_ctk
+sys.modules["tkinter"] = _mock_tk
+sys.modules["tkinter.filedialog"] = _mock_tk.filedialog
+sys.modules["tkinter.messagebox"] = _mock_tk.messagebox
+
+# Remove any page modules from sys.modules that may have been imported
+# during earlier collection (e.g. test_main_window.py imports
+# settings_page via main_window). We reload prompts_page and base_page
+# below with our mocks, and we remove settings_page and
+# navigation_manager so that test_settings_page.py can import them fresh
+# with its own mocks.
+sys.modules.pop("src.views.pages.settings_page", None)
+sys.modules.pop("src.views.pages.home_page", None)
+sys.modules.pop("src.navigation.navigation_manager", None)
+
+
+def teardown_module():
+    """Restore sys.modules to avoid contaminating other test modules.
+
+    Restores the original customtkinter/tkinter entries and removes any
+    page modules we reloaded so that subsequent test modules re-import
+    them with their own mock setup.
+    """
+    for key, original in _saved_modules.items():
+        if original is not None:
+            sys.modules[key] = original
+        else:
+            sys.modules.pop(key, None)
+
+    # Remove modules we reloaded so downstream test modules don't see
+    # stale mock-based versions. This is critical for modules like
+    # settings_page that capture ctk at import time.
+    for mod_name in (
+        "src.views.pages.prompts_page",
+        "src.views.pages.base_page",
+        "src.views.pages.settings_page",
+        "src.views.pages.home_page",
+    ):
+        sys.modules.pop(mod_name, None)
+
+
+# Import PromptsPage. We reload base_page and prompts_page because they
+# may have been imported already (e.g. via test_main_window.py collection)
+# with real customtkinter, and BasePage captures ctk.CTkFrame at import time.
+import src.views.pages.base_page as _base_page_module  # noqa: E402
+import src.views.pages.prompts_page as _prompts_page_module  # noqa: E402
+
+importlib.reload(_base_page_module)
+importlib.reload(_prompts_page_module)
 
 from src.views.pages.prompts_page import PromptsPage  # noqa: E402
 from src.services.generation_service import (  # noqa: E402
@@ -102,9 +160,12 @@ class TestPromptsPageGeneration:
     def test_generate_button_is_wired(self, tmp_path: Path) -> None:
         """Generate button command is bound to _on_generate_clicked."""
         page = _make_page(tmp_path)
-        call_args = _mock_ctk.CTkButton.call_args
-        assert call_args is not None
-        _, kwargs = call_args
+        generate_call = next(
+            call
+            for call in _mock_ctk.CTkButton.call_args_list
+            if call.kwargs.get("text") == "Generate"
+        )
+        _, kwargs = generate_call
         assert kwargs.get("command") == page._on_generate_clicked
 
     def test_on_generate_clicked_success(self, tmp_path: Path) -> None:

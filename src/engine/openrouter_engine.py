@@ -219,6 +219,16 @@ class OpenRouterEngine(AIEngine):
                         provider=self._config.provider,
                     )
 
+                try:
+                    error_data = json.loads(response_text)
+                    error = error_data.get("error") if isinstance(error_data, dict) else None
+                    if isinstance(error, dict) and error.get("isRetryable") is True:
+                        raise ConnectionError(
+                            f"OpenRouter API error {status}: {response_text[:200]}"
+                        )
+                except (json.JSONDecodeError, AttributeError, TypeError):
+                    pass
+
                 if status != 200:
                     raise AIEngineError(
                         f"OpenRouter API error {status}: {response_text[:200]}",

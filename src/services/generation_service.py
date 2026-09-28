@@ -132,6 +132,13 @@ class GenerationService:
         """Set the video generation engine."""
         self._video_engine = engine
 
+    async def _ensure_media_engine_ready(
+        self,
+        engine: ImageEngine | VoiceEngine | VideoEngine | None,
+    ) -> None:
+        if engine is not None and not getattr(engine, "is_ready", True):
+            await engine.initialize()
+
     def create_job(
         self,
         category: str,
@@ -224,6 +231,7 @@ class GenerationService:
                 job.metadata["image_response"] = image_response.text
 
             if MediaType.VOICE in job.media_types and self._voice_engine:
+                await self._ensure_media_engine_ready(self._voice_engine)
                 self._notify_progress(job.id, 0.7, "Generating voice...")
                 voice_request = GenerationRequest(
                     prompt=request.prompt,
@@ -233,6 +241,7 @@ class GenerationService:
                 job.metadata["voice_response"] = voice_response.text
 
             if MediaType.VIDEO in job.media_types and self._video_engine:
+                await self._ensure_media_engine_ready(self._video_engine)
                 self._notify_progress(job.id, 0.8, "Generating video...")
                 video_request = GenerationRequest(
                     prompt=request.prompt,
