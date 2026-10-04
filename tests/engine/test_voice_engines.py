@@ -21,8 +21,37 @@ from src.engine.voice_engine import (
     AudioFormat,
     EdgeTTSEngine,
     GoogleTTSEngine,
+    VoiceAccent,
+    VoiceConfig,
     VoiceGender,
 )
+
+
+def _make_edge_voice(
+    short_name: str = "en-US-AriaNeural",
+    gender: str = "Female",
+    locale: str = "en-US",
+) -> dict[str, Any]:
+    return {
+        "Name": short_name,
+        "ShortName": short_name,
+        "Gender": gender,
+        "Locale": locale,
+        "FriendlyName": short_name,
+    }
+
+
+def _make_communicate_mock(chunks: list[dict[str, Any]] | None = None) -> MagicMock:
+    """Build a mock edge_tts.Communicate yielding the given stream chunks."""
+    _chunks = list(chunks if chunks is not None else [{"type": "audio", "data": b"fake-mp3-audio-data"}])
+
+    async def _stream(*_args: Any, **_kwargs: Any):
+        for chunk in _chunks:
+            yield chunk
+
+    communicate = MagicMock()
+    communicate.stream = _stream
+    return communicate
 
 
 def _make_http_response(
@@ -85,63 +114,203 @@ class TestEdgeTTSEngine:
     @pytest.mark.asyncio
     async def test_initialize_success(self) -> None:
         engine = self._make_engine()
-        voices_response = _make_http_response(
-            status=200,
-            json_data=[{"ShortName": "en-US-AriaNeural", "Gender": "Female", "Locale": "en-US"}],
-        )
-        mock_session = _make_mock_session(get_responses=[voices_response])
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
 
-        with patch("src.engine.voice_engine.aiohttp.ClientSession", return_value=mock_session):
+        with patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices):
             await engine.initialize()
 
         assert engine.state == EngineState.READY
         assert engine.is_ready
 
     @pytest.mark.asyncio
+    async def test_initialize_uses_edge_tts_list_voices(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+
+        with patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices):
+            await engine.initialize()
+
+        mock_list_voices.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_fetch_voices_maps_voice_fields(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(
+            return_value=[
+                {
+                    "Name": "Microsoft Aria Online (Natural) - English (United States)",
+                    "ShortName": "en-US-AriaNeural",
+                    "Gender": "Female",
+                    "Locale": "en-US",
+                    "SuggestedCodec": "audio-24khz-48kbitrate-mono-mp3",
+                    "FriendlyName": "Aria",
+                    "Status": "Active",
+                    "VoiceTag": {"VoicePersonalities": []},
+                }
+            ]
+        )
+
+        with patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices):
+            await engine.initialize()
+
+        assert len(engine.get_available_voices()) == 1
+        voice = engine.get_available_voices()[0]
+        assert voice["ShortName"] == "en-US-AriaNeural"
+        assert voice["Gender"] == "Female"
+        assert voice["Locale"] == "en-US"
+
+    @pytest.mark.asyncio
     async def test_initialize_handles_voice_fetch_failure(self) -> None:
         engine = self._make_engine()
-        mock_session = _make_mock_session()
+        mock_list_voices = AsyncMock(side_effect=RuntimeError("network down"))
 
-        with patch("src.engine.voice_engine.aiohttp.ClientSession", return_value=mock_session):
+        with patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices):
             await engine.initialize()
 
         assert engine.state == EngineState.READY
+        assert engine.get_available_voices() == []
 
     @pytest.mark.asyncio
     async def test_generate_speech_success(self) -> None:
         engine = self._make_engine()
-        voices_response = _make_http_response(
-            status=200,
-            json_data=[{"ShortName": "en-US-AriaNeural", "Gender": "Female", "Locale": "en-US"}],
-        )
-        audio_bytes = b"fake-mp3-audio-data"
-        audio_response = _make_http_response(
-            status=200,
-            read_data=audio_bytes,
-        )
-        mock_session = _make_mock_session(get_responses=[voices_response, audio_response])
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock()
 
-        with patch("src.engine.voice_engine.aiohttp.ClientSession", return_value=mock_session):
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate) as mock_communicate,
+        ):
             await engine.initialize()
             audio_data = await engine.generate_speech("Hello world")
 
         assert audio_data == b"fake-mp3-audio-data"
+        assert mock_communicate.call_args.args[0] == "Hello world"
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_passes_selected_voice(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(
+            return_value=[
+                _make_edge_voice(short_name="en-US-AriaNeural", gender="Female", locale="en-US"),
+                _make_edge_voice(short_name="en-US-JennyNeural", gender="Female", locale="en-US"),
+            ]
+        )
+        communicate = _make_communicate_mock()
+        config = VoiceConfig()
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate) as mock_communicate,
+        ):
+            await engine.initialize()
+            expected_voice = engine._select_default_voice(config)
+            await engine.generate_speech("Test", config)
+
+        assert mock_communicate.call_args.args[1] == expected_voice
+
+    def test_select_default_voice_matches_gender_and_locale(self) -> None:
+        engine = self._make_engine()
+        engine._voices = [
+            _make_edge_voice(short_name="en-GB-RyanNeural", gender="Male", locale="british"),
+            _make_edge_voice(short_name="en-US-AriaNeural", gender="Female", locale="american"),
+        ]
+
+        config = VoiceConfig(gender=VoiceGender.MALE, accent=VoiceAccent.BRITISH)
+
+        assert engine._select_default_voice(config) == "en-GB-RyanNeural"
+
+    def test_select_default_voice_falls_back_to_aria(self) -> None:
+        engine = self._make_engine()
+        engine._voices = []
+
+        assert engine._select_default_voice(VoiceConfig()) == "en-US-AriaNeural"
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_uses_explicit_voice_id(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock()
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate) as mock_communicate,
+        ):
+            await engine.initialize()
+            await engine.generate_speech("Test", VoiceConfig(voice_id="en-US-JennyNeural"))
+
+        assert mock_communicate.call_args.args[1] == "en-US-JennyNeural"
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_maps_rate_pitch_volume(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock()
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate) as mock_communicate,
+        ):
+            await engine.initialize()
+            await engine.generate_speech(
+                "Test",
+                VoiceConfig(speed=1.5, pitch=-3.0, volume=0.5),
+            )
+
+        kwargs = mock_communicate.call_args.kwargs
+        assert kwargs["rate"] == "+50%"
+        assert kwargs["pitch"] == "-3Hz"
+        assert kwargs["volume"] == "-50%"
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_default_rate_pitch_volume(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock()
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate) as mock_communicate,
+        ):
+            await engine.initialize()
+            await engine.generate_speech("Test")
+
+        kwargs = mock_communicate.call_args.kwargs
+        assert kwargs["rate"] == "+0%"
+        assert kwargs["pitch"] == "+0Hz"
+        assert kwargs["volume"] == "+0%"
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_collects_multiple_chunks(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock(
+            chunks=[
+                {"type": "audio", "data": b"chunk-one"},
+                {"type": "WordBoundary", "text": "hello"},
+                {"type": "audio", "data": b"chunk-two"},
+            ]
+        )
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate),
+        ):
+            await engine.initialize()
+            audio_data = await engine.generate_speech("Test")
+
+        assert audio_data == b"chunk-onechunk-two"
 
     @pytest.mark.asyncio
     async def test_generate_success(self) -> None:
         engine = self._make_engine()
-        voices_response = _make_http_response(
-            status=200,
-            json_data=[{"ShortName": "en-US-AriaNeural", "Gender": "Female", "Locale": "en-US"}],
-        )
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
         audio_bytes = b"fake-mp3-audio-data"
-        audio_response = _make_http_response(
-            status=200,
-            read_data=audio_bytes,
-        )
-        mock_session = _make_mock_session(get_responses=[voices_response, audio_response])
+        communicate = _make_communicate_mock(chunks=[{"type": "audio", "data": audio_bytes}])
 
-        with patch("src.engine.voice_engine.aiohttp.ClientSession", return_value=mock_session):
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate),
+        ):
             await engine.initialize()
             request = GenerationRequest(prompt="Hello world")
             response = await engine.generate(request)
@@ -152,18 +321,39 @@ class TestEdgeTTSEngine:
         assert decoded == audio_bytes
 
     @pytest.mark.asyncio
-    async def test_generate_speech_http_error(self) -> None:
+    async def test_generate_speech_stream_error_raises(self) -> None:
         engine = self._make_engine()
-        voices_response = _make_http_response(
-            status=200,
-            json_data=[{"ShortName": "en-US-AriaNeural", "Gender": "Female", "Locale": "en-US"}],
-        )
-        error_response = _make_http_response(status=500, text_data="Internal error")
-        mock_session = _make_mock_session(get_responses=[voices_response, error_response])
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
 
-        with patch("src.engine.voice_engine.aiohttp.ClientSession", return_value=mock_session):
+        async def _failing_stream(*_args: Any, **_kwargs: Any):
+            raise RuntimeError("websocket closed")
+            yield  # pragma: no cover
+
+        communicate = MagicMock()
+        communicate.stream = _failing_stream
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate),
+        ):
             await engine.initialize()
-            with pytest.raises(AIEngineError, match="Edge TTS failed"):
+            with pytest.raises(AIEngineError, match="Edge TTS generation failed"):
+                await engine.generate_speech("Test")
+
+        assert engine.state == EngineState.ERROR
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_empty_audio_raises(self) -> None:
+        engine = self._make_engine()
+        mock_list_voices = AsyncMock(return_value=[_make_edge_voice()])
+        communicate = _make_communicate_mock(chunks=[{"type": "WordBoundary", "text": "hi"}])
+
+        with (
+            patch("src.engine.voice_engine.edge_tts.list_voices", mock_list_voices),
+            patch("src.engine.voice_engine.edge_tts.Communicate", return_value=communicate),
+        ):
+            await engine.initialize()
+            with pytest.raises(AIEngineError, match="no audio data"):
                 await engine.generate_speech("Test")
 
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import aiohttp
+import edge_tts
 
 from src.engine.ai_engine import (
     AIEngine,
@@ -195,7 +196,6 @@ class EdgeTTSEngine(VoiceEngine):
                 timeout=30.0,
             )
         super().__init__(config)
-        self.base_url = "https://dictate.microsoft.com/api/speech"
         self._voices: list[dict[str, Any]] = []
 
     async def initialize(self) -> None:
@@ -213,15 +213,17 @@ class EdgeTTSEngine(VoiceEngine):
     async def _fetch_voices(self) -> None:
         """Fetch available voices from Edge TTS."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://dictate.microsoft.com/api/speech/voices"
-                ) as response:
-                    if response.status == 200:
-                        self._voices = await response.json()
-                    else:
-                        logger.warning("Could not fetch Edge TTS voices")
-                        self._voices = []
+            raw_voices = await edge_tts.list_voices()
+            self._voices = [
+                {
+                    "Name": voice.get("Name", ""),
+                    "ShortName": voice.get("ShortName", ""),
+                    "Gender": voice.get("Gender", ""),
+                    "Locale": voice.get("Locale", ""),
+                    "FriendlyName": voice.get("FriendlyName", ""),
+                }
+                for voice in raw_voices
+            ]
         except Exception as exc:
             logger.warning("Error fetching voices: %s", exc)
             self._voices = []
@@ -252,31 +254,30 @@ class EdgeTTSEngine(VoiceEngine):
         if not voice_name or voice_name == "default":
             voice_name = self._select_default_voice(config)
 
-        url = f"{self.base_url}/synthesize"
-        params = {
-            "text": text,
-            "voice": voice_name,
-            "speed": str(config.speed),
-            "pitch": str(config.pitch),
-            "format": config.format.value,
-        }
-
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    url, params=params, timeout=self._config.timeout
-                ) as response:
-                    if response.status == 200:
-                        audio_data = await response.read()
-                        self._record_success()
-                        self._state = EngineState.READY
-                        return audio_data
-                    else:
-                        error_text = await response.text()
-                        raise AIEngineError(
-                            f"Edge TTS failed ({response.status}): {error_text}",
-                            provider=self._config.provider,
-                        )
+            communicate = edge_tts.Communicate(
+                text,
+                voice_name,
+                rate=self._to_rate(config.speed),
+                pitch=self._to_pitch(config.pitch),
+                volume=self._to_volume(config.volume),
+            )
+
+            audio_data = bytearray()
+            async for chunk in communicate.stream():
+                if chunk.get("type") == "audio" and chunk.get("data"):
+                    audio_data.extend(chunk["data"])
+
+            result = bytes(audio_data)
+            if not result:
+                raise AIEngineError(
+                    "Edge TTS returned no audio data",
+                    provider=self._config.provider,
+                )
+
+            self._record_success()
+            self._state = EngineState.READY
+            return result
         except AIEngineError:
             raise
         except Exception as exc:
@@ -284,6 +285,21 @@ class EdgeTTSEngine(VoiceEngine):
             raise AIEngineError(
                 f"Edge TTS generation failed: {exc}", provider=self._config.provider
             ) from exc
+
+    @staticmethod
+    def _to_rate(speed: float) -> str:
+        """Map a speed multiplier to an Edge TTS rate percentage."""
+        return f"{int(round((speed - 1.0) * 100)):+d}%"
+
+    @staticmethod
+    def _to_pitch(pitch: float) -> str:
+        """Map a semitone pitch offset to an Edge TTS pitch value."""
+        return f"{int(round(pitch)):+d}Hz"
+
+    @staticmethod
+    def _to_volume(volume: float) -> str:
+        """Map a 0.0-1.0 volume to an Edge TTS volume percentage."""
+        return f"{int(round((volume - 1.0) * 100)):+d}%"
 
     def _select_default_voice(self, config: VoiceConfig) -> str:
         """Select a default voice based on configuration."""
