@@ -729,7 +729,7 @@ class PromptsPage(BasePage):
             return
 
         category = self._category_var.get()
-        if not category or category.lower() != 'voices':
+        if not category:
             messagebox.showwarning('Generate Voice', 'Please select a Voices template.')
             return
 

@@ -102,6 +102,7 @@ from src.services.generation_service import (  # noqa: E402
 )
 from src.engine.ai_engine import GenerationResponse  # noqa: E402
 from src.engine.mock_engine import MockModelManager  # noqa: E402
+from src.engine.voice_engine import VoiceConfig  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -325,3 +326,52 @@ class TestPromptsPageGeneration:
         assert captured["daemon"] is True
         assert captured["target"] is not None
         assert page._generation_service.create_job.called
+
+    def test_generate_voice_not_rejected_for_non_voices_category(self, tmp_path: Path) -> None:
+        """Generate Voice must not be rejected when category is not 'Voices'."""
+        _mock_tk.messagebox.showwarning.reset_mock()
+
+        page = _make_page(tmp_path)
+        page._template_editor.get.return_value = "Hello {{name}}!"
+        page._collect_variable_values.return_value = {"name": "Alice"}
+        page._category_var.get.return_value = "Education"
+        page._template_var.get.return_value = "ABC Learning"
+
+        job = GenerationJob(
+            id="voice-job-1",
+            category="Education",
+            template_name="ABC Learning",
+            variables={"name": "Alice", "voice_config": VoiceConfig()},
+            media_types=[MediaType.VOICE],
+            status=GenerationStatus.COMPLETED,
+            result=GenerationResponse(
+                text="Voice output here",
+                model="mock",
+                provider="mock",
+            ),
+            error=None,
+        )
+        job.completed_at = None
+        job.duration_ms = 50.0
+        page._generation_service.create_job.return_value = job
+        page._generation_service.execute_job.return_value = job
+
+        page._set_voice_generating_state = MagicMock()
+
+        def _after(delay, callback, *args):
+            callback(*args)
+
+        page.after = _after
+
+        asyncio.run(page.on_generate_voice_clicked(
+            "Education", "ABC Learning", {"name": "Alice", "voice_config": VoiceConfig()}
+        ))
+
+        _mock_tk.messagebox.showwarning.assert_not_called()
+        page._generation_service.create_job.assert_called_once_with(
+            category="Education",
+            template_name="ABC Learning",
+            variables={"name": "Alice", "voice_config": VoiceConfig()},
+            media_types=[MediaType.VOICE],
+        )
+        page._generation_service.execute_job.assert_called_once_with(job)
