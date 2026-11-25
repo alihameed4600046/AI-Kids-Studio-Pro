@@ -16,6 +16,7 @@ from src.engine.ai_engine import GenerationResponse
 from src.engine.mock_engine import MockModelManager
 from src.engine.model_manager import ProviderConfig, ProviderType
 from src.engine.prompt_engine import PromptEngine
+from src.engine.voice_engine import VoiceConfig, VoiceGender, VoiceAccent
 from src.services.generation_repository import GenerationRepository
 from src.services.generation_service import GenerationService, GenerationJob, MediaType, GenerationStatus
 
@@ -199,3 +200,58 @@ class TestGenerationRepository:
         finally:
             db.close()
             DatabaseManager._instance = None
+
+    def test_save_job_with_voice_config(self, repository: GenerationRepository) -> None:
+        """Regression test: saving a job with VoiceConfig in variables must not fail."""
+        voice_config = VoiceConfig(
+            voice_id="en-US-AriaNeural",
+            gender=VoiceGender.FEMALE,
+            accent=VoiceAccent.AMERICAN,
+            speed=1.2,
+            pitch=2.0,
+            volume=0.8,
+        )
+        job = GenerationJob(
+            id="voice-job-1",
+            category="stories",
+            template_name="voice_story",
+            variables={"name": "Alice", "voice_config": voice_config},
+            media_types=[MediaType.VOICE],
+            status=GenerationStatus.COMPLETED,
+            result=GenerationResponse(
+                text="data:audio/mp3;base64,encoded",
+                model="edge-tts",
+                provider="edge_tts",
+            ),
+            error=None,
+            created_at=datetime.now(),
+            completed_at=datetime.now(),
+            duration_ms=1500.0,
+            metadata={"voice_engine": "edge_tts"},
+        )
+
+        repository.save(job)
+
+        loaded = repository.load("voice-job-1")
+        assert loaded is not None
+        assert loaded.id == "voice-job-1"
+        assert loaded.category == "stories"
+
+        # Verify the VoiceConfig was serialized to JSON and can be parsed back
+        variables = json.loads(loaded.variables)
+        assert variables["name"] == "Alice"
+        assert "voice_config" in variables
+        vc = variables["voice_config"]
+        assert vc["voice_id"] == "en-US-AriaNeural"
+        assert vc["gender"] == "female"
+        assert vc["accent"] == "american"
+        assert vc["speed"] == 1.2
+        assert vc["pitch"] == 2.0
+        assert vc["volume"] == 0.8
+        assert vc["format"] == "mp3"
+        # output_path may be None or omitted
+        assert vc.get("output_path") is None
+
+        # Also verify metadata was saved
+        metadata = json.loads(loaded.metadata)
+        assert metadata["voice_engine"] == "edge_tts"

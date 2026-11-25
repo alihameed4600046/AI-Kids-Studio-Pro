@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import is_dataclass, asdict
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from src.database.database_manager import DatabaseManager
@@ -13,6 +15,20 @@ from src.logging_config import configure_logging
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+
+def _json_serializer(obj: Any) -> Any:
+    """Serialize dataclasses and Enums for JSON encoding.
+
+    - Dataclasses are converted to dicts via asdict().
+    - Enums are converted to their .value.
+    - Other types raise TypeError to avoid silent loss.
+    """
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return asdict(obj)
+    if isinstance(obj, Enum):
+        return obj.value
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 class GenerationRepository:
@@ -41,15 +57,15 @@ class GenerationRepository:
                     job.id,
                     job.category,
                     job.template_name,
-                    json.dumps(job.variables),
-                    json.dumps([mt.value for mt in job.media_types]),
+                    json.dumps(job.variables, default=_json_serializer),
+                    json.dumps([mt.value for mt in job.media_types], default=_json_serializer),
                     job.status.value,
                     job.result.text if job.result else None,
                     job.error,
                     job.created_at.isoformat(),
                     job.completed_at.isoformat() if job.completed_at else None,
                     job.duration_ms,
-                    json.dumps(job.metadata),
+                    json.dumps(job.metadata, default=_json_serializer),
                 ),
             )
             logger.debug("Saved generation job %s", job.id)
